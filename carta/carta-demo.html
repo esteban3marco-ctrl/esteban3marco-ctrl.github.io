@@ -1,0 +1,3482 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gasthaus zur Linde — Speisekarte</title>
+<meta name="description" content="Digitale Speisekarte mit vollständiger Allergendeklaration nach LIV.">
+<meta name="theme-color" content="#292929">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23292929'/%3E%3Ctext x='16' y='23' font-size='19' text-anchor='middle' fill='%23E6DCC9' font-family='Helvetica,Arial'%3E%E2%97%89%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Sibuya usa Bebas Neue Pro + Acumin Pro (Adobe Fonts, licencia de pago).
+     Bebas Neue es prácticamente la misma cara; Barlow es el equivalente
+     libre más cercano a Acumin Pro. Si se licencia Adobe, se cambia aquí. -->
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   CARTA PÚBLICA — prototipo demo (Suiza)
+   Un solo fichero, sin dependencias externas, carga instantánea.
+
+   Dirección: estilo tipográfico internacional suizo.
+   Grotesca + monoespaciada. Acento petróleo (Vierwaldstättersee).
+   El rojo es SOLO semáforo de alérgeno, nunca decorativo.
+   ============================================================ */
+
+/* ---- Tokens ----
+   Diseño comprometido en oscuro, como la referencia: sin variante
+   clara. Todo se pinta explícitamente para que no herede nada. ---- */
+:root{
+  --paper:#292929;              /* carbón cálido, no negro */
+  --surface:#313131;
+  --surface-2:#3A3A3A;
+  --ink:#E6DCC9;                /* crema: es el color de texto Y el acento */
+  --ink-soft:rgba(230,220,201,.68);
+  --ink-faint:rgba(230,220,201,.44);
+  --rule:rgba(230,220,201,.17);
+  --rule-soft:rgba(230,220,201,.09);
+  --accent:#E6DCC9;
+  --accent-ink:#292929;
+  --accent-wash:rgba(230,220,201,.10);
+  --gold:#CCBB9B;
+  --alert:#D4735C;              /* terracota: avisa sin salirse de la paleta */
+  --alert-wash:rgba(212,115,92,.16);
+  --ok:#A8B79A;
+  --ok-wash:rgba(168,183,154,.16);
+  --scrim:rgba(20,20,20,.78);
+  --lift:0 24px 64px rgba(0,0,0,.55);
+  --glow:0 0 0 1px rgba(230,220,201,.4), 0 0 26px rgba(230,220,201,.13);
+
+  --display:"Bebas Neue",Impact,"Haettenschweiler","Arial Narrow",sans-serif;
+  --sans:Barlow,"Helvetica Neue",Helvetica,Arial,sans-serif;
+  --script:var(--display);
+  --grotesk:var(--sans);
+  --mono:var(--sans);
+  /* Monoespaciada sólo donde es semánticamente correcta: la comanda de cocina */
+  --ticket:ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono",Consolas,monospace;
+
+  --wrap:660px;
+  --r:10px;
+  --r-lg:10px;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+/* El atributo hidden debe ganar a cualquier display de componente */
+[hidden]{display:none !important}
+
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--grotesk);
+  font-size:16px;
+  line-height:1.45;
+  letter-spacing:-.006em;
+  -webkit-font-smoothing:antialiased;
+  overflow-wrap:break-word;
+}
+body.is-locked{overflow:hidden}
+
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;letter-spacing:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{transition-duration:.01ms !important;animation-duration:.01ms !important}
+  html{scroll-behavior:auto}
+}
+
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 22px}
+
+/* Registro documental: mono, versalitas, tracking abierto */
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.tag{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-faint);
+}
+
+/* ---------- Cabecera ---------- */
+.masthead{padding:30px 0 0}
+.masthead .eyebrow{
+  font-size:11.5px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);
+}
+.masthead h1{
+  font-size:clamp(34px,9vw,50px);font-weight:800;line-height:1;letter-spacing:-.042em;
+  margin:11px 0 0;text-wrap:balance;
+}
+.masthead .facts{
+  display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:14px;
+  font-size:13px;font-weight:500;color:var(--ink-soft);
+}
+.masthead .facts span{white-space:nowrap}
+.masthead .hr{height:1px;background:var(--rule);margin-top:22px}
+
+/* ---------- Idioma ---------- */
+.langbar{display:flex;gap:6px;padding:14px 0}
+.langbar button{
+  flex:1;padding:10px 0;border-radius:999px;background:var(--surface-2);
+  font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--ink-soft);
+  transition:background .15s,color .15s;
+}
+.langbar button:hover{color:var(--ink)}
+.langbar button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+
+/* ---------- Barra pegajosa ---------- */
+.sticky{
+  position:sticky;top:0;z-index:30;
+  background:var(--paper);
+  border-bottom:1px solid var(--rule);
+}
+@supports (backdrop-filter:blur(1px)){
+  .sticky{background:color-mix(in srgb, var(--paper) 90%, transparent);backdrop-filter:saturate(160%) blur(12px);-webkit-backdrop-filter:saturate(160%) blur(12px)}
+}
+.filterrow{display:flex;gap:8px;align-items:stretch;padding:11px 0}
+.filterbtn{
+  flex:1;display:flex;align-items:center;justify-content:flex-start;gap:9px;
+  padding:11px 13px;border:1px solid var(--rule);border-radius:var(--r);
+  font-size:13.5px;font-weight:500;background:var(--surface);
+  transition:border-color .14s, color .14s;
+}
+.filterbtn:hover{border-color:var(--ink-soft)}
+.filterbtn.on{border-color:var(--accent);color:var(--accent);background:var(--accent-wash)}
+.filterbtn .count{
+  margin-left:auto;min-width:19px;height:19px;padding:0 5px;border-radius:999px;
+  background:var(--accent);color:var(--accent-ink);
+  font-family:var(--mono);font-size:10.5px;font-weight:600;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.iconbtn{
+  width:43px;flex:0 0 43px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--rule);border-radius:var(--r);background:var(--surface);
+  transition:border-color .14s;
+}
+.iconbtn:hover{border-color:var(--ink-soft)}
+.iconbtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:square}
+
+.navchips{display:flex;gap:0;overflow-x:auto;padding:0 22px 10px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.navchips::-webkit-scrollbar{display:none}
+.navchips a{
+  flex:0 0 auto;padding:8px 14px;margin-right:7px;border-radius:999px;
+  background:var(--surface-2);font-size:13px;font-weight:600;letter-spacing:-.01em;
+  color:var(--ink-soft);text-decoration:none;white-space:nowrap;transition:all .15s;
+}
+.navchips a:hover{background:var(--ink);color:var(--paper)}
+
+/* ---------- Aviso de filtro activo ---------- */
+.activenote{
+  display:none;margin:18px 0 0;padding:13px 15px;border-radius:var(--r);
+  background:var(--accent-wash);border-left:2px solid var(--accent);
+  font-size:13.5px;line-height:1.5;
+}
+.activenote.show{display:block}
+.activenote strong{font-weight:600;letter-spacing:-.01em}
+.activenote .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.activenote button{
+  margin-top:9px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent);border-bottom:1px solid currentColor;padding-bottom:1px;
+}
+
+/* ---------- Smart Waiter ---------- */
+.waiter{margin:26px 0 0;border:1px solid var(--accent);border-radius:var(--r-lg);overflow:hidden}
+.waiter .whead{
+  display:flex;align-items:baseline;gap:10px;padding:12px 15px 11px;
+  background:var(--accent-wash);border-bottom:1px solid var(--accent);
+}
+.waiter .whead .wlabel{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);
+}
+.waiter .whead .whint{font-size:11.5px;color:var(--ink-soft);margin-left:auto}
+.wform{display:flex;gap:0;border-bottom:1px solid var(--rule)}
+.wform input{
+  flex:1;min-width:0;border:0;background:var(--surface);color:var(--ink);
+  padding:14px 15px;font-family:inherit;font-size:14.5px;letter-spacing:-.01em;
+}
+.wform input::placeholder{color:var(--ink-faint)}
+.wform input:focus{outline:0;box-shadow:inset 0 0 0 2px var(--accent)}
+.wform button{
+  flex:0 0 auto;padding:0 17px;background:var(--accent);color:var(--accent-ink);
+  font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+}
+.wsuggest{display:flex;gap:6px;flex-wrap:wrap;padding:12px 15px;background:var(--surface)}
+.wsuggest button{
+  padding:6px 10px;border:1px solid var(--rule);border-radius:var(--r);
+  font-size:12.5px;color:var(--ink-soft);transition:all .13s;
+}
+.wsuggest button:hover{border-color:var(--accent);color:var(--accent)}
+
+.wout{display:none;background:var(--surface);border-top:1px solid var(--rule)}
+.wout.show{display:block}
+.wread{
+  display:flex;flex-wrap:wrap;gap:5px;align-items:center;padding:13px 15px 0;
+}
+.wread .rl{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin-right:4px}
+.wread .rc{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;padding:4px 7px;border-radius:999px;
+  background:var(--accent-wash);color:var(--accent);
+}
+.wlist{padding:13px 15px 0}
+.wcard{
+  display:block;width:100%;text-align:left;padding:13px 0;border-bottom:1px solid var(--rule-soft);
+}
+.wcard:last-of-type{border-bottom:0}
+.wcard .top{display:flex;justify-content:space-between;align-items:baseline;gap:16px}
+.wcard .rank{
+  font-family:var(--mono);font-size:10.5px;color:var(--accent);margin-right:8px;font-variant-numeric:tabular-nums;
+}
+.wcard .name{font-size:16px;font-weight:500;letter-spacing:-.022em}
+.wcard .price{font-family:var(--mono);font-size:13.5px;color:var(--ink-soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+.wcard .why{
+  margin:7px 0 0;font-size:13.5px;line-height:1.5;color:var(--ink);max-width:52ch;
+  padding-left:11px;border-left:2px solid var(--accent);
+}
+.wcard .codes{display:flex;flex-wrap:wrap;gap:4px;margin-top:9px}
+.wcard .shot{
+  width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:var(--r);margin-top:10px;display:block;
+}
+.wpair{
+  margin:0;padding:13px 15px 15px;border-top:1px solid var(--rule-soft);
+  font-size:13px;color:var(--ink-soft);line-height:1.5;
+}
+.wpair b{font-weight:500;color:var(--ink)}
+.wpair .p{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.wnone{padding:16px 15px 18px;font-size:13.5px;color:var(--ink-soft);line-height:1.5}
+.wdisclaimer{
+  padding:0 15px 14px;font-family:var(--mono);font-size:10px;letter-spacing:.05em;
+  color:var(--ink-faint);line-height:1.6;
+}
+
+/* ---------- Menú del día: único bloque invertido ---------- */
+.tages{
+  margin:24px 0 4px;padding:20px 20px 18px;border-radius:var(--r-lg);
+  background:var(--accent);color:var(--accent-ink);
+}
+.tages .label{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+  opacity:.72;
+}
+.tages .date{font-family:var(--mono);font-size:11.5px;opacity:.72;margin-top:3px}
+.tages h2{font-size:21px;font-weight:600;letter-spacing:-.025em;margin:14px 0 6px;line-height:1.15}
+.tages p{margin:0;font-size:14px;line-height:1.5;opacity:.86}
+.tages .foot{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;margin-top:18px}
+.tages .codes{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.tages .acode{border-color:currentColor;color:inherit;opacity:.78}
+.tages .price{font-family:var(--mono);font-size:19px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+
+/* ---------- Secciones ---------- */
+.section{padding-top:32px;scroll-margin-top:112px}
+.section > h2{
+  font-size:22px;font-weight:800;letter-spacing:-.035em;color:var(--ink);margin:0 0 13px;
+}
+.section .rule{display:none}
+
+/* ---------- Plato ---------- */
+.dish{
+  width:100%;text-align:left;display:block;
+  padding:16px;margin-bottom:10px;background:var(--surface);
+  border:1px solid var(--rule);border-radius:var(--r);
+  transition:opacity .18s, border-color .15s, transform .15s;
+}
+.dish:hover{border-color:var(--ink);transform:translateY(-1px)}
+.dish.dimmed{opacity:.34}
+.dish.hidden{display:none}
+.dish .top{display:flex;justify-content:space-between;align-items:baseline;gap:16px}
+.dish .name{font-size:17px;font-weight:700;line-height:1.25;letter-spacing:-.028em}
+.dish .price{
+  font-size:15px;font-weight:700;color:var(--ink);
+  white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:-.02em;
+}
+.dish .desc{margin:6px 0 0;font-size:14px;color:var(--ink-soft);line-height:1.5;max-width:52ch}
+.dish .origin{margin-top:8px;font-size:12px;font-weight:500;color:var(--ink-faint)}
+.dish .meta{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:11px}
+.dish .arrow{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--ink-faint)}
+
+.badge{
+  font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.11em;text-transform:uppercase;
+  padding:4px 7px;border-radius:999px;background:var(--ok-wash);color:var(--ok);
+}
+.acode{
+  font-family:var(--mono);font-size:10.5px;font-weight:500;padding:3px 6px;border-radius:999px;
+  border:1px solid var(--rule);color:var(--ink-faint);font-variant-numeric:tabular-nums;
+}
+.acode.hit{background:var(--alert);border-color:var(--alert);color:#fff}
+
+.dish.sold .name{text-decoration:line-through;text-decoration-thickness:1px;color:var(--ink-faint)}
+.dish.sold .price{text-decoration:line-through;color:var(--ink-faint)}
+.soldtag{
+  font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.11em;text-transform:uppercase;
+  padding:4px 7px;border-radius:999px;background:var(--surface-2);color:var(--ink-soft);
+}
+
+.emptynote{display:none;padding:46px 0;text-align:center;color:var(--ink-faint);font-size:13.5px}
+.emptynote.show{display:block}
+
+/* ---------- Pie ---------- */
+.legal{
+  margin:54px 0 0;padding:22px 0 46px;border-top:2px solid var(--ink);
+  font-size:12px;color:var(--ink-faint);line-height:1.6;max-width:60ch;
+}
+.legal p{margin:0 0 10px}
+.legal .brand{
+  margin-top:22px;font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink-faint);
+}
+
+/* ---------- Pedido: barra fija ---------- */
+body.has-cart{padding-bottom:74px}
+.cartbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;
+  max-width:var(--wrap);margin:0 auto;
+  display:flex;align-items:center;gap:14px;
+  padding:12px 22px calc(12px + env(safe-area-inset-bottom));
+  background:var(--ink);color:var(--paper);
+  transform:translateY(115%);transition:transform .24s cubic-bezier(.32,.72,0,1);
+  pointer-events:none;
+}
+.cartbar.show{transform:translateY(0);pointer-events:auto}
+.cartbar .sum{display:flex;flex-direction:column;gap:1px;min-width:0}
+.cartbar .n{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;opacity:.62}
+.cartbar .t{font-family:var(--mono);font-size:16px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.cartbar .go{
+  margin-left:auto;padding:12px 18px;border-radius:var(--r);
+  background:var(--paper);color:var(--ink);
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;
+}
+
+/* ---------- Pedido: añadir ---------- */
+.addrow{display:flex;gap:8px;align-items:center;margin:16px 0 4px}
+.addbtn{
+  flex:1;padding:13px;border-radius:var(--r);background:var(--accent);color:var(--accent-ink);
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;
+}
+.addbtn[disabled]{background:var(--surface-2);color:var(--ink-faint);cursor:default}
+.wcard .add{
+  margin-top:10px;display:inline-flex;align-items:center;gap:7px;
+  padding:7px 11px;border:1px solid var(--accent);border-radius:var(--r);color:var(--accent);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+}
+
+/* ---------- Pedido: líneas ---------- */
+.oline{display:flex;align-items:flex-start;gap:12px;padding:13px 0;border-bottom:1px solid var(--rule-soft)}
+.oline .oname{flex:1;min-width:0;font-size:14.5px;font-weight:500;letter-spacing:-.02em}
+.oline .osub{font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-top:3px}
+.oline .oprice{font-family:var(--mono);font-size:13.5px;font-variant-numeric:tabular-nums;color:var(--ink-soft);white-space:nowrap}
+.qty{display:flex;align-items:center;border:1px solid var(--rule);border-radius:var(--r);overflow:hidden;flex:0 0 auto}
+.qty button{width:30px;height:30px;font-family:var(--mono);font-size:14px;color:var(--ink-soft);line-height:1}
+.qty button:hover{background:var(--surface-2);color:var(--ink)}
+.qty .v{width:26px;text-align:center;font-family:var(--mono);font-size:12.5px;font-variant-numeric:tabular-nums}
+.ototal{display:flex;justify-content:space-between;align-items:baseline;padding:15px 0 4px;border-top:2px solid var(--ink);margin-top:6px}
+.ototal .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+.ototal .val{font-family:var(--mono);font-size:19px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+
+.tablefield{display:flex;align-items:center;gap:10px;margin:18px 0 4px}
+.tablefield label{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+.tablefield input{
+  width:74px;padding:9px 11px;border:1px solid var(--rule);border-radius:var(--r);
+  background:var(--surface);color:var(--ink);font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums;
+}
+.tablefield input:focus{outline:0;box-shadow:0 0 0 2px var(--accent)}
+
+.upsell{margin:20px 0 0;padding:14px;border:1px solid var(--accent);border-radius:var(--r)}
+.upsell .ul{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.upsell .urow{display:flex;align-items:center;gap:12px}
+.upsell .un{flex:1;min-width:0;font-size:14px;font-weight:500;letter-spacing:-.02em}
+.upsell .uw{font-size:12.5px;color:var(--ink-soft);margin-top:3px;line-height:1.45}
+.upsell .up{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink-soft)}
+.upsell .ua{
+  padding:7px 11px;border:1px solid var(--accent);border-radius:var(--r);color:var(--accent);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;flex:0 0 auto;
+}
+
+/* ---------- Pedido: confirmación y comanda de cocina ---------- */
+.sentwrap{padding:6px 0 0}
+.sentwrap .ok{
+  display:flex;gap:11px;align-items:flex-start;padding:14px;border-radius:var(--r);
+  background:var(--ok-wash);border-left:2px solid var(--ok);color:var(--ink);font-size:14px;line-height:1.5;
+}
+.sentwrap .ok .sym{font-family:var(--mono);color:var(--ok);font-weight:700}
+.ticketlabel{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-faint);margin:24px 0 9px;
+}
+.ticket{
+  font-family:var(--ticket);font-size:12px;line-height:1.7;
+  border:1px dashed var(--rule);border-radius:var(--r);padding:16px;
+  background:var(--surface);white-space:pre-wrap;overflow-x:auto;
+  font-variant-numeric:tabular-nums;
+}
+.ticket .hl{color:var(--alert);font-weight:700}
+
+/* ---------- Hoja inferior ---------- */
+.scrim{
+  position:fixed;inset:0;z-index:60;background:var(--scrim);
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.scrim.open{opacity:1;pointer-events:auto}
+
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:70;
+  max-width:var(--wrap);margin:0 auto;
+  background:var(--surface);border-radius:var(--r-lg) var(--r-lg) 0 0;box-shadow:var(--lift);
+  max-height:88vh;display:flex;flex-direction:column;
+  transform:translateY(101%);transition:transform .28s cubic-bezier(.32,.72,0,1);
+}
+.sheet.open{transform:translateY(0)}
+.sheet .grab{width:34px;height:3px;border-radius:99px;background:var(--rule);margin:9px auto 0;flex:0 0 auto}
+.sheet .head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:15px 20px 13px;border-bottom:1px solid var(--rule);flex:0 0 auto;
+}
+.sheet .head h3{font-size:17px;font-weight:600;letter-spacing:-.025em;margin:0;line-height:1.25}
+.sheet .close{
+  width:30px;height:30px;flex:0 0 30px;border-radius:var(--r);background:var(--surface-2);
+  display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--ink-soft);
+}
+.sheet .body{padding:18px 20px 26px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sheet .foot{
+  padding:12px 20px calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--rule);
+  display:flex;gap:8px;flex:0 0 auto;background:var(--surface);
+}
+.sheet .foot button{
+  flex:1;padding:13px;border-radius:var(--r);
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.11em;text-transform:uppercase;
+}
+.btn-primary{background:var(--ink);color:var(--paper)}
+.btn-ghost{border:1px solid var(--rule);color:var(--ink-soft)}
+
+.grouplabel{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-faint);font-weight:500;margin:2px 0 11px;
+}
+.chipwrap + .grouplabel, .modeswitch + .grouplabel{margin-top:26px}
+
+.chipwrap{display:flex;flex-wrap:wrap;gap:6px}
+.chip{
+  padding:9px 12px;border-radius:var(--r);border:1px solid var(--rule);
+  font-size:13px;color:var(--ink-soft);transition:all .13s;
+}
+.chip[aria-pressed="true"]{background:var(--ok-wash);border-color:var(--ok);color:var(--ok);font-weight:500}
+
+.alist{display:grid;grid-template-columns:1fr;gap:1px}
+.arow{
+  display:flex;align-items:center;gap:11px;padding:10px 11px;border-radius:var(--r);
+  border:1px solid transparent;text-align:left;width:100%;transition:all .13s;
+}
+.arow:hover{background:var(--surface-2)}
+.arow[aria-pressed="true"]{background:var(--alert-wash);border-color:var(--alert)}
+.arow .num{
+  width:25px;height:25px;flex:0 0 25px;border-radius:999px;border:1px solid var(--rule);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  color:var(--ink-faint);font-variant-numeric:tabular-nums;
+}
+.arow[aria-pressed="true"] .num{background:var(--alert);border-color:var(--alert);color:#fff}
+.arow .txt{font-size:14px}
+.arow[aria-pressed="true"] .txt{font-weight:500;color:var(--alert)}
+.arow .tick{margin-left:auto;font-size:12px;color:var(--alert);opacity:0}
+.arow[aria-pressed="true"] .tick{opacity:1}
+
+.modeswitch{display:flex;gap:0;border:1px solid var(--rule);border-radius:var(--r);overflow:hidden;margin-bottom:4px}
+.modeswitch button{
+  flex:1;padding:10px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-faint);transition:all .13s;
+}
+.modeswitch button + button{border-left:1px solid var(--rule)}
+.modeswitch button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+
+/* ---------- Detalle de plato ---------- */
+.dd-price{font-family:var(--mono);font-size:19px;font-variant-numeric:tabular-nums;margin:0 0 12px;letter-spacing:-.02em}
+.dd-desc{font-size:14.5px;color:var(--ink-soft);line-height:1.55;margin:0 0 20px;max-width:52ch}
+.dd-block{padding:14px;border:1px solid var(--rule);border-radius:var(--r);margin-bottom:10px}
+.dd-block h4{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-faint);margin:0 0 11px;font-weight:500;
+}
+.dd-block ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.dd-block li{display:flex;align-items:center;gap:10px;font-size:14px}
+.dd-block li .num{
+  width:23px;height:23px;flex:0 0 23px;border-radius:999px;background:var(--alert);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:10.5px;font-weight:500;
+}
+.dd-block.none{border-color:var(--ok)}
+.dd-block.none p{margin:0;font-size:14px;color:var(--ok);font-weight:500}
+.dd-warn{
+  display:flex;gap:10px;padding:13px 14px;border-radius:var(--r);margin-bottom:10px;
+  background:var(--alert-wash);border-left:2px solid var(--alert);
+  font-size:13.5px;line-height:1.45;color:var(--ink);
+}
+.dd-warn .sym{font-family:var(--mono);color:var(--alert);font-weight:600}
+
+/* ---------- Verzeichnis ---------- */
+.matrixwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--rule);border-radius:var(--r)}
+table.matrix{border-collapse:collapse;font-family:var(--mono);font-size:11px;width:100%;min-width:600px;font-variant-numeric:tabular-nums}
+table.matrix th,table.matrix td{border-bottom:1px solid var(--rule-soft);padding:8px 7px;text-align:center}
+table.matrix thead th{
+  position:sticky;top:0;background:var(--surface);font-size:10px;font-weight:500;
+  color:var(--ink-faint);letter-spacing:.04em;border-bottom:1px solid var(--ink);
+}
+table.matrix th.dishcol{
+  text-align:left;position:sticky;left:0;background:var(--surface);z-index:2;
+  min-width:200px;font-family:var(--grotesk);font-size:12.5px;font-weight:450;color:var(--ink);letter-spacing:-.015em;
+}
+table.matrix thead th.dishcol{z-index:3;font-family:var(--mono);font-size:10px;font-weight:500;color:var(--ink-faint);letter-spacing:.16em;text-transform:uppercase}
+table.matrix tr.catrow th.dishcol{
+  font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-faint);font-weight:500;background:var(--surface-2);
+}
+table.matrix tr.catrow td{background:var(--surface-2)}
+table.matrix td.yes{color:var(--alert);font-weight:700}
+table.matrix td.no{color:var(--rule)}
+.matrixnote{font-size:12px;color:var(--ink-faint);line-height:1.6;margin:14px 0 0;max-width:58ch}
+.legendgrid{display:grid;gap:8px}
+.legendgrid > div{display:flex;gap:10px;align-items:center;font-size:13px}
+.legendgrid .num{
+  width:23px;height:23px;flex:0 0 23px;border-radius:999px;border:1px solid var(--rule);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:10.5px;font-weight:500;color:var(--ink-faint);font-variant-numeric:tabular-nums;
+}
+
+/* ============================================================
+   Sistema visual (referencia: smart-menu.app)
+   Mayúsculas con tracking abierto, pesos ligeros a tamaño grande,
+   amarillo sólido en el estado activo, cápsulas y glow.
+   Se aplica al final: mismos selectores, sin peleas de especificidad.
+   ============================================================ */
+
+/* --- Titulares: mayúsculas, tracking abierto, peso ligero --- */
+.masthead h1{
+  text-transform:uppercase;font-weight:700;letter-spacing:.045em;
+  font-size:clamp(30px,8vw,44px);line-height:1.02;
+}
+.masthead h1 .lt{font-weight:300}
+.masthead .eyebrow{font-weight:700;letter-spacing:.2em;font-size:11px}
+.masthead .facts{font-weight:400;letter-spacing:.02em;color:var(--ink-faint)}
+.masthead .hr{background:var(--rule)}
+
+.section > h2{
+  text-transform:uppercase;font-weight:700;letter-spacing:.09em;
+  font-size:clamp(19px,5vw,24px);color:var(--ink);margin:0 0 15px;
+}
+.sheet .head h3{text-transform:uppercase;font-weight:700;letter-spacing:.06em;font-size:16px}
+
+.tages .label,.waiter .whead .wlabel,.grouplabel,.ticketlabel,
+.upsell .ul,.wread .rl,.cartbar .n,.ototal .lbl,.legal .brand,
+.tablefield label,.dd-block h4{font-weight:700;letter-spacing:.18em;font-size:10.5px}
+
+.cartbar .go,.sheet .foot button,.addbtn,.wform button,
+.modeswitch button,.upsell .ua,.wsuggest button{
+  font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+}
+
+/* --- Cápsulas por todas partes --- */
+.filterbtn,.iconbtn,.chip,.wsuggest button,.modeswitch,
+.cartbar .go,.sheet .foot button,.addbtn,.wform button,.upsell .ua,
+.langbar button,.navchips a,.qty{border-radius:999px}
+.arow,.dd-block,.upsell,.ticket,.matrixwrap,.tablefield input,
+.waiter,.wform input{border-radius:var(--r)}
+.dish,.tages,.sheet{border-radius:var(--r-lg)}
+.sheet{border-radius:var(--r-lg) var(--r-lg) 0 0}
+
+/* --- Tarjeta de plato con miniatura --- */
+.dish{
+  display:flex;gap:14px;align-items:flex-start;
+  background:var(--surface);border:1px solid var(--rule);padding:14px;
+}
+.dish:hover{border-color:rgba(230,220,201,.45);transform:none}
+.dish .thumb{
+  width:76px;height:76px;flex:0 0 76px;border-radius:14px;object-fit:cover;
+  background:var(--surface-2);
+}
+.dish .col{flex:1;min-width:0;display:block}
+.dish .top{display:flex}
+.dish .desc,.dish .origin{display:block}
+.dish .meta{display:flex}
+.dish .name{font-weight:600;letter-spacing:-.01em;font-size:16px}
+.dish .price{font-weight:700;letter-spacing:.01em;font-size:14.5px;color:var(--accent)}
+.dish .desc{font-size:13px;color:var(--ink-soft);margin-top:4px}
+.dish .origin{
+  font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--ink-faint);font-weight:500;margin-top:7px;
+}
+.dish .arrow{display:none}
+.dish.sold{opacity:.45}
+
+/* --- Menú del día: amarillo sólido, el estado "activo" de la referencia --- */
+.tages{background:var(--accent);color:var(--accent-ink);box-shadow:var(--glow);padding:22px}
+.tages .label{color:var(--accent-ink);opacity:.7}
+.tages .date{color:var(--accent-ink);opacity:.7;font-weight:500}
+.tages h2{
+  text-transform:uppercase;font-weight:700;letter-spacing:.03em;
+  font-size:21px;line-height:1.12;color:var(--accent-ink);
+}
+.tages p{color:var(--accent-ink);opacity:.78}
+.tages .price{font-weight:700;color:var(--accent-ink);font-size:20px}
+.tages .acode{border-color:rgba(10,10,10,.35);color:var(--accent-ink);opacity:1}
+.tages .shot{
+  width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:14px;
+  display:block;margin:14px 0 0;
+}
+
+/* --- Camarero digital: botón flotante siempre a la vista --- */
+.waiterfab{
+  position:fixed;right:16px;bottom:20px;z-index:49;
+  display:flex;align-items:center;gap:9px;
+  padding:13px 18px;border-radius:999px;
+  background:var(--accent);color:var(--accent-ink);
+  border:1px solid var(--accent);box-shadow:0 0 0 4px rgba(230,220,201,.14), 0 14px 34px rgba(0,0,0,.55);
+  font-weight:700;font-size:11.5px;letter-spacing:.11em;text-transform:uppercase;
+  transition:bottom .24s cubic-bezier(.32,.72,0,1), transform .15s;
+}
+.waiterfab:hover{transform:translateY(-2px)}
+.waiterfab:active{transform:translateY(0)}
+body.has-cart .waiterfab{bottom:calc(90px + env(safe-area-inset-bottom))}
+.waiterfab .fabdot{
+  width:8px;height:8px;border-radius:999px;background:var(--accent-ink);
+  animation:fabpulse 2.4s ease-in-out infinite;
+}
+@keyframes fabpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.75)}}
+@media (prefers-reduced-motion: reduce){.waiterfab .fabdot{animation:none}}
+@media (max-width:400px){.waiterfab .fablabel{display:none}.waiterfab{padding:15px}}
+
+/* --- Camarero digital: contenido de la hoja --- */
+#sheetWaiter .whint{
+  font-family:var(--script);font-size:20px;color:var(--accent);
+  letter-spacing:0;margin:0 0 14px;line-height:1.2;
+}
+.wform{border:1px solid var(--rule);border-radius:999px;overflow:hidden;background:var(--surface-2)}
+.wform input{background:transparent;border-radius:0;padding:15px 18px}
+.wform input:focus{box-shadow:none}
+.wform button{background:var(--accent);color:var(--accent-ink);border-radius:999px;margin:5px}
+.wsuggest{padding:14px 0 0;background:transparent}
+.wout{background:transparent;border-top:0;margin-top:6px}
+.wread{padding:16px 0 0}
+.wlist{padding:6px 0 0}
+.wpair{padding:14px 0 0;border-top:1px solid var(--rule);margin-top:14px}
+.wdisclaimer{padding:14px 0 0}
+.wnone{padding:16px 0 0}
+.wcard .name{font-weight:600;letter-spacing:-.01em}
+.wcard .rank{color:var(--accent);font-weight:700}
+.wcard .price{color:var(--accent);font-weight:700}
+.wcard .why{border-left-color:var(--accent);color:var(--ink-soft)}
+.wcard .shot{border-radius:14px}
+.wpair b{color:var(--accent)}
+
+/* --- Etiquetas --- */
+.acode{font-weight:600;font-size:11px;padding:4px 9px;border-color:var(--rule)}
+.badge,.soldtag{font-weight:600;font-size:10px;padding:5px 10px;letter-spacing:.1em}
+.wread .rc{font-weight:600;font-size:11px;padding:5px 11px;letter-spacing:.06em}
+.langbar button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.navchips a:hover{background:var(--accent);color:var(--accent-ink)}
+.chip[aria-pressed="true"]{background:var(--ok-wash);border-color:var(--ok);color:var(--ok)}
+.modeswitch button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+
+/* --- Acciones --- */
+.btn-primary,.addbtn,.cartbar .go{background:var(--accent);color:var(--accent-ink)}
+.cartbar{background:var(--surface);border-top:1px solid var(--rule);color:var(--ink)}
+.cartbar .t{color:var(--accent);font-weight:700}
+.filterbtn{background:var(--surface);border-color:var(--rule)}
+.filterbtn.on{background:var(--accent-wash);border-color:var(--accent);color:var(--accent)}
+.iconbtn{background:var(--surface);border-color:var(--rule)}
+.sheet .close{background:var(--surface-2);color:var(--ink)}
+.oline .oname{font-weight:600}
+.ototal .val,.dd-price{color:var(--accent);font-weight:700}
+.upsell{border-color:var(--accent)}
+.upsell .un{font-weight:600}
+.ticket{background:#000;border-color:var(--rule)}
+.legal{border-top-color:var(--rule)}
+
+/* --- Media: una sola regla para todas las fotos/vídeos --- */
+.shot{
+  display:block;width:100%;max-width:100%;height:auto;
+  aspect-ratio:16/10;max-height:230px;object-fit:cover;
+  border-radius:14px;margin:0 0 16px;background:var(--surface-2);
+}
+.tages .shot{margin:14px 0 0;max-height:200px}
+.wcard .shot{margin:10px 0 0;max-height:170px}
+/* Foto viva: zoom lentisimo para que ninguna ficha quede quieta */
+.shotwrap{display:block;overflow:hidden;border-radius:6px;margin:0 0 16px}
+.tages .shotwrap{margin:14px 0 0}
+.wcard .shotwrap{margin:10px 0 0}
+.shotwrap .shot{margin:0;border-radius:0;will-change:transform;animation:kenburns 16s ease-in-out infinite alternate}
+@keyframes kenburns{from{transform:scale(1) translate(0,0)}to{transform:scale(1.1) translate(-1.6%,1.2%)}}
+@media (prefers-reduced-motion: reduce){.shotwrap .shot{animation:none}}
+.sheet .body{overflow-x:hidden}
+
+/* --- Modo pre-comanda: la tablet del camarero --- */
+.tablet{
+  border:1px solid var(--accent);border-radius:var(--r);padding:16px;
+  background:var(--surface);box-shadow:var(--glow);
+}
+.tablet .thead{
+  display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  padding-bottom:11px;margin-bottom:11px;border-bottom:1px solid var(--rule);
+}
+.tablet .thead b{font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:13px}
+.tablet .pend{
+  font-size:10.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--accent-ink);background:var(--accent);padding:4px 10px;border-radius:999px;
+}
+.tablet .trow{display:flex;gap:11px;align-items:baseline;padding:5px 0;font-size:14px}
+.tablet .tq{color:var(--accent);font-weight:700;min-width:26px}
+.tablet .tnote{
+  margin-top:11px;padding:9px 12px;border-radius:999px;
+  background:var(--alert-wash);color:var(--alert);
+  font-size:11px;font-weight:700;letter-spacing:.08em;
+}
+.tablet .tconfirm{
+  width:100%;margin-top:15px;padding:13px;border-radius:999px;
+  background:var(--accent);color:var(--accent-ink);
+  font-weight:600;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;
+}
+
+/* --- Interruptor de demo --- */
+.demoswitch{margin-top:26px;padding-top:18px;border-top:1px dashed var(--rule)}
+.demoswitch .dl{
+  display:block;margin-bottom:10px;font-size:10px;font-weight:700;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--accent);
+}
+.demoswitch .modeswitch button{font-size:10px;padding:10px 8px;letter-spacing:.06em}
+
+/* ============================================================
+   PRESENTACIÓN
+   ============================================================ */
+body.showing-intro .masthead,
+body.showing-intro .sticky,
+body.showing-intro main,
+body.showing-intro .waiterfab,
+body.showing-intro .cartbar{display:none !important}
+body:not(.showing-intro) #intro{display:none}
+
+#intro{background:var(--paper)}
+
+.introbar{
+  position:fixed;top:0;left:0;right:0;z-index:40;
+  display:flex;align-items:center;gap:12px;
+  height:100px;padding:0 18px;
+  background:linear-gradient(to bottom, rgba(41,41,41,.85), rgba(41,41,41,0));
+  transition:background .25s, border-color .25s;
+  border-bottom:1px solid transparent;
+}
+/* Pasado el hero necesita fondo propio: si no, los titulares
+   pasan por debajo y se leen a través de la barra. */
+.introbar.solid{
+  background:rgba(41,41,41,.94);
+  border-bottom-color:var(--rule);
+}
+@supports (backdrop-filter:blur(1px)){
+  .introbar.solid{background:rgba(41,41,41,.78);backdrop-filter:saturate(150%) blur(14px);-webkit-backdrop-filter:saturate(150%) blur(14px)}
+}
+.introlang{flex:0 1 210px;gap:4px;padding:0;border:0}
+.introlang button{padding:8px 0;font-size:10.5px;background:rgba(230,220,201,.12);color:var(--ink-soft)}
+.introlang button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.enterbtn{
+  margin-left:auto;padding:12px 20px;border-radius:999px;
+  background:var(--accent);color:var(--accent-ink);
+  font-family:var(--sans);font-weight:600;font-size:11px;
+  letter-spacing:.13em;text-transform:uppercase;white-space:nowrap;
+  transition:transform .15s, opacity .15s;
+}
+.enterbtn:hover{transform:translateY(-2px)}
+.enterbtn.big{margin:0;padding:16px 30px;font-size:12px}
+/* El botón de la barra va perfilado, como los suyos arriba a la
+   derecha; el relleno crema se reserva para la llamada del hero. */
+#enterTop{
+  background:rgba(230,220,201,.06);color:var(--ink);
+  border:1px solid rgba(230,220,201,.35);
+}
+#enterTop:hover{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+/* --- Hero ---
+   Composición de Sibuya: las dos líneas del claim NO van juntas.
+   La primera arriba a la izquierda, la segunda abajo a la derecha,
+   y el vídeo respirando en todo el hueco de en medio. --- */
+.hero{position:relative;height:100svh;min-height:560px;overflow:hidden;background:#1E1E1E}
+.herovid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55}
+.heroveil{
+  position:absolute;inset:0;
+  background:linear-gradient(to bottom, rgba(41,41,41,.60) 0%, rgba(41,41,41,.12) 42%, rgba(41,41,41,.94) 100%);
+}
+/* Monograma gigante de fondo, como su marca de palillos */
+.heromono{
+  position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);
+  font-family:var(--display);font-size:min(78vw,86vh);line-height:.78;
+  color:var(--ink);opacity:.022;letter-spacing:.02em;
+  pointer-events:none;user-select:none;white-space:nowrap;
+}
+/* Medidas tomadas del hero de Sibuya a 1280x551:
+   antetítulo 14px arriba al 13,6% · línea 1 al 16,2% ·
+   línea 2 al 55,5% · claim 100px peso 600 · ambas líneas crema. */
+/* El hero ocupa todo el ancho, no la columna de lectura del menú.
+   El margen lateral va en cada hijo: los elementos absolutos se
+   posicionan contra la caja de padding y lo ignorarían. */
+.hero{--heropad:clamp(22px,7vw,130px)}
+.hero .inner{
+  position:relative;z-index:2;height:100%;
+  max-width:none;padding:0;
+}
+.hero .eyebrow{
+  position:absolute;top:13.6%;left:var(--heropad);margin:0;
+  font-family:var(--sans);font-weight:500;font-size:14px;
+  letter-spacing:.06em;text-transform:uppercase;color:#707070;
+}
+.claim{
+  position:absolute;inset:0;margin:0;
+  font-family:var(--display);font-weight:400;text-transform:uppercase;
+  font-size:clamp(46px,7.9vw,100px);line-height:1;letter-spacing:.012em;
+  color:var(--ink);
+  /* Bebas Neue libre sólo trae un peso; el suyo es 600.
+     El trazo lo engorda sin cambiar las formas de las letras. */
+  -webkit-text-stroke:1.1px currentColor;
+}
+.claim .l1,.claim .l2{
+  position:absolute;display:block;white-space:nowrap;
+  transition:transform .12s linear;
+}
+.claim .l1{top:16.2%;left:var(--heropad);text-align:left}
+.claim .l2{top:55.5%;right:var(--heropad);text-align:right}
+/* Claim partido en caracteres, entrada escalonada */
+.claim .ch{display:inline-block;opacity:0;transform:translateY(.9em)}
+.claim.go .ch{animation:chIn .7s cubic-bezier(.22,.8,.24,1) forwards}
+@keyframes chIn{to{opacity:1;transform:none}}
+.herofoot{position:absolute;top:79%;left:var(--heropad);display:flex}
+.hero .enterbtn{margin-left:0}
+@media (max-width:560px){
+  .claim{font-size:clamp(38px,11vw,64px);-webkit-text-stroke-width:.7px}
+  .claim .l1,.claim .l2{white-space:normal;max-width:100%}
+  .claim .l1{top:14%}
+  .claim .l2{top:52%}
+  .hero .eyebrow{font-size:12px}
+}
+/* Filete vertical abajo a la izquierda */
+.herorule{
+  position:absolute;left:var(--heropad);bottom:0;width:1px;height:clamp(48px,9vh,86px);
+  background:linear-gradient(transparent,var(--ink-faint));
+}
+.scrollcue{
+  position:absolute;left:0;right:0;bottom:22px;display:flex;flex-direction:column;
+  align-items:center;gap:8px;font-family:var(--sans);font-size:9.5px;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint);
+}
+.scrollcue i{display:block;width:1px;height:30px;background:linear-gradient(var(--ink-faint),transparent);animation:cue 2.2s ease-in-out infinite}
+@keyframes cue{0%,100%{transform:scaleY(.4);opacity:.4;transform-origin:top}50%{transform:scaleY(1);opacity:1;transform-origin:top}}
+
+/* Logotipo centrado en la barra, como el suyo */
+.wordmark{
+  position:absolute;left:50%;transform:translateX(-50%);
+  font-family:var(--display);font-weight:400;text-transform:uppercase;
+  font-size:19px;letter-spacing:.14em;color:var(--ink);white-space:nowrap;
+  pointer-events:none;
+}
+@media (max-width:640px){.wordmark{display:none}}
+
+/* --- Secciones --- */
+.introsec{padding:clamp(64px,13vw,120px) 0}
+.introsec.tight{padding:0}
+.introsec.last{padding-bottom:clamp(80px,16vw,150px)}
+.ihead{
+  font-family:var(--display);font-weight:400;text-transform:uppercase;
+  font-size:clamp(34px,10vw,60px);line-height:.92;letter-spacing:.012em;
+  margin:0 0 20px;color:var(--ink);white-space:pre-line;
+}
+.ibody{
+  margin:0 0 28px;font-family:var(--sans);font-size:15.5px;line-height:1.65;
+  color:var(--ink-soft);max-width:52ch;
+}
+.ifull{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;border-radius:6px;background:var(--surface)}
+.ipair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ipair img,.ipair video{width:100%;height:100%;aspect-ratio:3/4;object-fit:cover;border-radius:6px;background:var(--surface)}
+.istrip{
+  display:flex;gap:10px;overflow-x:auto;padding:4px 22px 26px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;
+}
+.istrip::-webkit-scrollbar{display:none}
+.istrip figure{flex:0 0 200px;margin:0}
+.istrip img,.istrip video{width:200px;height:250px;object-fit:cover;border-radius:6px;background:var(--surface);display:block}
+.istrip figcaption{
+  margin-top:10px;font-family:var(--display);font-weight:400;text-transform:uppercase;
+  font-size:16px;letter-spacing:.014em;color:var(--ink);line-height:1.05;
+}
+.istrip .p{font-family:var(--display);font-size:15px;color:var(--gold)}
+.introsec .enterbtn{margin-left:0}
+.introsec.last .ifull{margin-bottom:28px}
+
+/* --- Revelado al hacer scroll --- */
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .75s ease, transform .75s cubic-bezier(.22,.8,.24,1)}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion: reduce){
+  .reveal{opacity:1;transform:none;transition:none}
+  .claim .ch{opacity:1;transform:none;animation:none}
+  .scrollcue i{animation:none}
+}
+@media (min-width:700px){
+  .ipair img,.ipair video{aspect-ratio:4/5}
+  .istrip figure{flex:0 0 240px}
+  .istrip img,.istrip video{width:240px;height:300px}
+}
+
+/* ============================================================
+   Sistema visual (referencia: sibuyaurbansushibar.com)
+   Condensada en mayúsculas a tamaño grande para todo lo que
+   titula; grotesca normal para lo que se lee. Crema sobre carbón,
+   cápsulas de 100px y fotos a esquina viva.
+   ============================================================ */
+
+/* --- Titulares: condensada, mayúsculas, muy grande --- */
+.masthead h1{
+  font-family:var(--display);font-weight:400;text-transform:uppercase;
+  font-size:clamp(46px,14vw,80px);line-height:.9;letter-spacing:.012em;
+  margin:6px 0 0;color:var(--ink);
+}
+.masthead h1 .lt{font-weight:400;opacity:.55}
+.masthead .eyebrow{
+  font-family:var(--sans);font-weight:500;text-transform:uppercase;
+  letter-spacing:.16em;font-size:11.5px;color:var(--ink-faint);
+}
+.masthead .facts{
+  font-family:var(--sans);font-weight:400;font-size:12.5px;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint);
+}
+
+.section > h2{
+  font-family:var(--display);font-weight:400;text-transform:uppercase;
+  font-size:clamp(32px,9vw,46px);line-height:.95;letter-spacing:.012em;
+  color:var(--ink);margin:0 0 14px;
+}
+.sheet .head h3{
+  font-family:var(--display);font-weight:400;text-transform:uppercase;
+  font-size:26px;letter-spacing:.014em;line-height:1;
+}
+
+/* --- Etiquetas pequeñas: grotesca, tracking abierto --- */
+.tages .label,.grouplabel,.ticketlabel,.upsell .ul,.wread .rl,
+.cartbar .n,.ototal .lbl,.legal .brand,.tablefield label,
+.dd-block h4,.demoswitch .dl{
+  font-family:var(--sans);font-weight:500;letter-spacing:.16em;font-size:10.5px;
+}
+
+/* --- Botones: cápsula crema con texto carbón --- */
+.cartbar .go,.sheet .foot button,.addbtn,.wform button,
+.modeswitch button,.upsell .ua,.wsuggest button,.waiterfab,
+.tablet .tconfirm,.langbar button,.navchips a,.filterbtn,.chip{
+  font-family:var(--sans);font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+}
+.cartbar .go,.sheet .foot button,.addbtn,.wform button,.tablet .tconfirm,
+.waiterfab,.btn-primary{font-size:11.5px}
+.btn-ghost{border-color:var(--rule);color:var(--ink-soft);background:transparent}
+
+/* --- Plato: nombre en condensada, precio en condensada --- */
+.dish{background:var(--surface);border-color:var(--rule);align-items:center}
+.dish:hover{border-color:var(--ink-faint)}
+.dish .thumb{border-radius:6px;width:82px;height:82px;flex:0 0 82px}
+.dish .name{
+  font-family:var(--display);font-weight:400;text-transform:uppercase;
+  font-size:21px;line-height:1.02;letter-spacing:.014em;color:var(--ink);
+}
+.dish .price{
+  font-family:var(--display);font-weight:400;font-size:20px;
+  letter-spacing:.014em;color:var(--gold);
+}
+.dish .desc{font-family:var(--sans);font-size:13px;color:var(--ink-soft);line-height:1.45;margin-top:5px}
+.dish .origin{
+  font-family:var(--sans);font-size:10px;font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);
+}
+
+/* --- Menú del día: bloque crema, como sus tarjetas --- */
+.tages{background:var(--accent);color:var(--accent-ink);box-shadow:none;border-radius:var(--r)}
+.tages h2{
+  font-family:var(--display);font-weight:400;text-transform:uppercase;
+  font-size:34px;line-height:.94;letter-spacing:.012em;color:var(--accent-ink);
+}
+.tages .label,.tages .date{color:var(--accent-ink);opacity:.62}
+.tages p{color:var(--accent-ink);opacity:.75;font-family:var(--sans)}
+.tages .price{font-family:var(--display);font-weight:400;font-size:30px;color:var(--accent-ink)}
+.tages .acode{border-color:rgba(41,41,41,.3);color:var(--accent-ink)}
+.tages .shot{border-radius:6px}
+
+/* --- Camarero digital: círculo crema abajo a la derecha --- */
+.waiterfab{
+  background:var(--accent);color:var(--accent-ink);border-color:var(--accent);
+  box-shadow:0 10px 30px rgba(0,0,0,.5);padding:14px 20px;
+}
+.waiterfab .fabdot{background:var(--accent-ink)}
+#sheetWaiter .whint{
+  font-family:var(--display);font-weight:400;text-transform:uppercase;
+  font-size:24px;letter-spacing:.014em;color:var(--gold);line-height:1;margin:0 0 16px;
+}
+.wform{border-color:var(--rule);background:var(--surface-2)}
+.wform input{font-family:var(--sans);font-size:15px;color:var(--ink)}
+.wform button{background:var(--accent);color:var(--accent-ink)}
+
+/* --- La respuesta hablada: lo primero que se lee --- */
+.wanswer{
+  margin:18px 0 0;padding:16px 18px;border-radius:var(--r);
+  background:var(--accent);color:var(--accent-ink);
+  font-family:var(--sans);font-size:15px;line-height:1.5;font-weight:500;
+}
+.wcard .name{
+  font-family:var(--display);font-weight:400;text-transform:uppercase;
+  font-size:20px;letter-spacing:.014em;color:var(--ink);
+}
+.wcard .price{font-family:var(--display);font-weight:400;font-size:19px;color:var(--gold)}
+.wcard .rank{font-family:var(--display);font-size:15px;color:var(--gold)}
+.wcard .why{border-left-color:var(--gold);color:var(--ink-soft);font-family:var(--sans)}
+.wpair b{color:var(--gold)}
+.wcard .shot,.shot{border-radius:6px}
+
+/* --- Etiquetas de alérgeno y dieta --- */
+.acode{font-family:var(--sans);font-weight:500;letter-spacing:.04em;color:var(--ink-faint)}
+.acode.hit{background:var(--alert);border-color:var(--alert);color:#1B1B1B}
+.badge,.soldtag{font-family:var(--sans);font-weight:600;letter-spacing:.12em}
+.wread .rc{font-family:var(--sans);font-weight:500;letter-spacing:.08em;background:var(--accent-wash);color:var(--ink)}
+.langbar button[aria-pressed="true"],.modeswitch button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.navchips a{background:transparent;border:1px solid var(--rule);color:var(--ink-soft)}
+.navchips a:hover{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.filterbtn.on{background:var(--accent-wash);border-color:var(--ink-faint);color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ok-wash);border-color:var(--ok);color:var(--ok)}
+
+/* --- Cantidades y totales --- */
+.ototal .val,.dd-price,.cartbar .t{
+  font-family:var(--display);font-weight:400;letter-spacing:.014em;color:var(--gold);font-size:26px;
+}
+.oline .oname{font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:18px;letter-spacing:.014em}
+.oline .oprice{font-family:var(--display);font-size:17px;color:var(--gold)}
+.qty .v{font-family:var(--sans);font-weight:600}
+.upsell{border-color:var(--rule)}
+.upsell .un{font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:18px;letter-spacing:.014em}
+.upsell .up{font-family:var(--display);font-size:17px;color:var(--gold)}
+.tablet{border-color:var(--gold);box-shadow:none}
+.tablet .pend{background:var(--gold);color:var(--accent-ink)}
+.tablet .tq{color:var(--gold)}
+.ticket{background:#1E1E1E}
+.cartbar{background:var(--surface)}
+
+/* --- El cocinerito del Smart Waiter, saludando --- */
+.chef{display:inline-block;flex:0 0 auto}
+.waiterfab .chef{width:30px;height:30px}
+#wLabel{display:flex;align-items:center;gap:10px}
+#wLabel .chef{width:36px;height:36px}
+.chef-brazo{transform-box:view-box;transform-origin:41px 41px;animation:chefwave 2.1s ease-in-out infinite}
+@keyframes chefwave{0%,100%{transform:rotate(0)}25%{transform:rotate(-18deg)}50%{transform:rotate(6deg)}70%{transform:rotate(-12deg)}}
+@media (prefers-reduced-motion: reduce){.chef-brazo{animation:none}}
+</style>
+</head>
+<body class="showing-intro">
+
+<!-- ============================================================
+     PRESENTACIÓN — mismo orden que Sibuya:
+     hero con vídeo y claim partido → concepto → par de fotos →
+     la carta → la sorpresa (Smart Waiter) → entrar
+     ============================================================ -->
+<div id="intro">
+
+  <div class="introbar">
+    <nav class="langbar introlang" id="introLang" aria-label="Sprache">
+      <button type="button" data-lang="de" aria-pressed="true">DE</button>
+      <button type="button" data-lang="fr" aria-pressed="false">FR</button>
+      <button type="button" data-lang="it" aria-pressed="false">IT</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </nav>
+    <span class="wordmark" id="wordmark"></span>
+    <button type="button" class="enterbtn" data-enter id="enterTop">Zur Karte</button>
+  </div>
+
+  <section class="hero">
+    <video class="herovid" id="heroVid" autoplay muted loop playsinline preload="auto"></video>
+    <div class="heroveil"></div>
+    <div class="heromono" id="heroMono" aria-hidden="true"></div>
+    <div class="wrap inner">
+      <p class="eyebrow" id="inEyebrow"></p>
+      <h1 class="claim">
+        <span class="l1" id="inClaim1"></span>
+        <span class="l2" id="inClaim2"></span>
+      </h1>
+      <div class="herofoot">
+        <button type="button" class="enterbtn big" data-enter id="inCta"></button>
+      </div>
+      <div class="herorule" aria-hidden="true"></div>
+      <div class="scrollcue"><span id="inScroll"></span><i></i></div>
+    </div>
+  </section>
+
+  <section class="introsec">
+    <div class="wrap">
+      <h2 class="ihead reveal" id="inS2Head"></h2>
+      <p class="ibody reveal" id="inS2Body"></p>
+      <img class="ifull reveal" id="inS2Img" alt="" loading="lazy" decoding="async">
+    </div>
+  </section>
+
+  <section class="introsec tight">
+    <div class="wrap ipair">
+      <img class="reveal" id="inPair1" alt="" loading="lazy" decoding="async">
+      <img class="reveal" id="inPair2" alt="" loading="lazy" decoding="async">
+    </div>
+  </section>
+
+  <section class="introsec">
+    <div class="wrap">
+      <h2 class="ihead reveal" id="inS3Head"></h2>
+      <p class="ibody reveal" id="inS3Body"></p>
+    </div>
+    <div class="istrip reveal" id="inStrip"></div>
+    <div class="wrap">
+      <button type="button" class="enterbtn" data-enter id="inS3Cta"></button>
+    </div>
+  </section>
+
+  <section class="introsec last">
+    <div class="wrap">
+      <h2 class="ihead reveal" id="inS4Head"></h2>
+      <p class="ibody reveal" id="inS4Body"></p>
+      <video class="ifull reveal" id="inS4Vid" autoplay muted loop playsinline preload="none"></video>
+      <button type="button" class="enterbtn big" data-enter id="inS4Cta"></button>
+    </div>
+  </section>
+
+</div>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="eyebrow" id="mhEyebrow">Speisekarte</div>
+    <h1 id="mhName"></h1>
+    <div class="facts">
+      <span id="mhStreet"></span>
+      <span id="mhCity"></span>
+      <span id="mhSince"></span>
+    </div>
+    <div class="hr"></div>
+  </div>
+  <div class="wrap">
+    <nav class="langbar" id="langbar" aria-label="Sprache">
+      <button type="button" data-lang="de" aria-pressed="true">DE</button>
+      <button type="button" data-lang="fr" aria-pressed="false">FR</button>
+      <button type="button" data-lang="it" aria-pressed="false">IT</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </nav>
+  </div>
+</header>
+
+<div class="sticky">
+  <div class="wrap">
+    <div class="filterrow">
+      <button type="button" class="filterbtn" id="openFilter">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+        <span id="filterLabel">Allergien &amp; Ernährung</span>
+        <span class="count" id="filterCount" hidden>0</span>
+      </button>
+      <button type="button" class="iconbtn" id="openMatrix" aria-label="Allergenverzeichnis">
+        <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M4 9.5h16M4 15h16M9.5 4v16"/></svg>
+      </button>
+    </div>
+  </div>
+  <nav class="navchips" id="navchips" aria-label="Kategorien"></nav>
+</div>
+
+<main class="wrap">
+  <div class="activenote" id="activenote"></div>
+
+  <section class="tages" id="tages" aria-labelledby="tagesTitle"></section>
+  <div id="menu"></div>
+  <p class="emptynote" id="emptynote"></p>
+  <footer class="legal" id="legal"></footer>
+</main>
+
+<!-- Camarero digital: siempre a la vista, abajo a la derecha -->
+<button type="button" class="waiterfab" id="waiterFab" aria-label="Smart Waiter">
+  <svg class="chef" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><g class="chef-brazo"><path d="M41 41 Q49 36 52 27" stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round"/><circle cx="52.5" cy="24.5" r="3.4" fill="currentColor"/></g><path d="M23 41 Q16 44 14.5 51" stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round"/><circle cx="14" cy="52.5" r="3" fill="currentColor"/><rect x="23" y="38.5" width="18" height="17" rx="5.5" fill="currentColor" opacity=".16"/><rect x="23" y="38.5" width="18" height="17" rx="5.5" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="32" cy="45" r="1.5" fill="currentColor"/><circle cx="32" cy="50" r="1.5" fill="currentColor"/><path d="M21 22 A11 11 0 0 0 43 22" stroke="currentColor" stroke-width="3" fill="none"/><path d="M25.5 27.5 q2 -2.4 4 0 M34.5 27.5 q2 -2.4 4 0" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M28 31.5 q4 3.2 8 0" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M21 22 C17 13 25 9 27 10 C28 4 36 4 37 10 C39 9 47 13 43 22 Z" fill="currentColor" opacity=".16"/><path d="M21 22 C17 13 25 9 27 10 C28 4 36 4 37 10 C39 9 47 13 43 22 Z" stroke="currentColor" stroke-width="3" fill="none" stroke-linejoin="round"/></svg>
+  <span class="fablabel" id="fabLabel">Smart Waiter</span>
+</button>
+
+<div class="cartbar" id="cartbar">
+  <span class="sum">
+    <span class="n" id="cartN"></span>
+    <span class="t" id="cartT"></span>
+  </span>
+  <button type="button" class="go" id="openOrder">Bestellen</button>
+</div>
+
+<div class="scrim" id="scrim"></div>
+
+<!-- Hoja: camarero digital -->
+<section class="sheet" id="sheetWaiter" role="dialog" aria-modal="true" aria-labelledby="wLabel" hidden>
+  <div class="grab"></div>
+  <div class="head">
+    <h3 id="wLabel"><svg class="chef" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><g class="chef-brazo"><path d="M41 41 Q49 36 52 27" stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round"/><circle cx="52.5" cy="24.5" r="3.4" fill="currentColor"/></g><path d="M23 41 Q16 44 14.5 51" stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round"/><circle cx="14" cy="52.5" r="3" fill="currentColor"/><rect x="23" y="38.5" width="18" height="17" rx="5.5" fill="currentColor" opacity=".16"/><rect x="23" y="38.5" width="18" height="17" rx="5.5" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="32" cy="45" r="1.5" fill="currentColor"/><circle cx="32" cy="50" r="1.5" fill="currentColor"/><path d="M21 22 A11 11 0 0 0 43 22" stroke="currentColor" stroke-width="3" fill="none"/><path d="M25.5 27.5 q2 -2.4 4 0 M34.5 27.5 q2 -2.4 4 0" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M28 31.5 q4 3.2 8 0" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M21 22 C17 13 25 9 27 10 C28 4 36 4 37 10 C39 9 47 13 43 22 Z" fill="currentColor" opacity=".16"/><path d="M21 22 C17 13 25 9 27 10 C28 4 36 4 37 10 C39 9 47 13 43 22 Z" stroke="currentColor" stroke-width="3" fill="none" stroke-linejoin="round"/></svg><span>Smart Waiter</span></h3>
+    <button type="button" class="close" data-close aria-label="Schliessen">✕</button>
+  </div>
+  <div class="body">
+    <p class="whint" id="wHint"></p>
+    <form class="wform" id="wForm" autocomplete="off">
+      <input type="text" id="wInput" name="q" aria-labelledby="wLabel">
+      <button type="submit" id="wSend">Fragen</button>
+    </form>
+    <div class="wsuggest" id="wSuggest"></div>
+    <div class="wout" id="wOut" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- Hoja: pedido -->
+<section class="sheet" id="sheetOrder" role="dialog" aria-modal="true" aria-labelledby="soTitle" hidden>
+  <div class="grab"></div>
+  <div class="head">
+    <h3 id="soTitle">Ihre Bestellung</h3>
+    <button type="button" class="close" data-close aria-label="Schliessen">✕</button>
+  </div>
+  <div class="body" id="soBody"></div>
+  <div class="foot" id="soFoot">
+    <button type="button" class="btn-primary" id="sendOrder">An die Küche senden</button>
+  </div>
+</section>
+
+<!-- Hoja: filtros -->
+<section class="sheet" id="sheetFilter" role="dialog" aria-modal="true" aria-labelledby="sfTitle" hidden>
+  <div class="grab"></div>
+  <div class="head">
+    <h3 id="sfTitle">Allergien &amp; Ernährung</h3>
+    <button type="button" class="close" data-close aria-label="Schliessen">✕</button>
+  </div>
+  <div class="body" id="sfBody"></div>
+  <div class="foot">
+    <button type="button" class="btn-ghost" id="resetFilter">Zurücksetzen</button>
+    <button type="button" class="btn-primary" data-close id="applyFilter">Anzeigen</button>
+  </div>
+</section>
+
+<!-- Hoja: detalle de plato -->
+<section class="sheet" id="sheetDish" role="dialog" aria-modal="true" aria-labelledby="sdTitle" hidden>
+  <div class="grab"></div>
+  <div class="head">
+    <h3 id="sdTitle"></h3>
+    <button type="button" class="close" data-close aria-label="Schliessen">✕</button>
+  </div>
+  <div class="body" id="sdBody"></div>
+</section>
+
+<!-- Hoja: Verzeichnis -->
+<section class="sheet" id="sheetMatrix" role="dialog" aria-modal="true" aria-labelledby="smTitle" hidden>
+  <div class="grab"></div>
+  <div class="head">
+    <h3 id="smTitle">Allergenverzeichnis</h3>
+    <button type="button" class="close" data-close aria-label="Schliessen">✕</button>
+  </div>
+  <div class="body" id="smBody"></div>
+</section>
+
+<script>
+"use strict";
+
+/* ============================================================
+   0. EL RESTAURANTE
+   Lo único que hay que tocar para llevar esta demo a una visita.
+   Cambia estas líneas y la carta entera lleva su nombre.
+   ============================================================ */
+
+/* Qué restaurante se muestra: ?r=brasserie para la demo francófona */
+const VENUE = new URLSearchParams(location.search).get("r") || "linde";
+const DEFAULT_LANG = VENUE === "brasserie" ? "fr" : "de";
+
+let RESTAURANT = {
+  name:   "Gasthaus zur Linde",
+  street: "Seestrasse 12",
+  zip:    "6006",
+  city:   {de:"Luzern", fr:"Lucerne", it:"Lucerna", en:"Lucerne"},
+  since:  "1904",
+  phone:  "+41 41 000 00 00",
+  region: {de:"Vierwaldstättersee", fr:"lac des Quatre-Cantons", it:"Lago dei Quattro Cantoni", en:"Lake Lucerne"},
+  kitchenLang: "de"   // idioma en el que la cocina recibe la comanda
+};
+
+/* Nombre de cada idioma, para poder decir "la cocina lo recibe
+   siempre en alemán" en los cuatro idiomas del comensal. */
+const LANGNAMES = {
+  de:{de:"Deutsch",  fr:"Französisch", it:"Italienisch", en:"Englisch"},
+  fr:{de:"allemand", fr:"français",    it:"italien",     en:"anglais"},
+  it:{de:"tedesco",  fr:"francese",    it:"italiano",    en:"inglese"},
+  en:{de:"German",   fr:"French",      it:"Italian",     en:"English"}
+};
+
+/* ============================================================
+   1. DATOS
+   En producción esto viene de la base de datos del restaurante.
+   Aquí va embebido para que la demo funcione sin servidor.
+   ============================================================ */
+
+// Los 14 alérgenos de declaración obligatoria (LIV, Suiza)
+const ALLERGENS = [
+  {n:1,  de:"Glutenhaltiges Getreide", fr:"Céréales contenant du gluten", it:"Cereali contenenti glutine", en:"Cereals containing gluten", es:"Cereales con gluten"},
+  {n:2,  de:"Krebstiere",              fr:"Crustacés",                    it:"Crostacei",                  en:"Crustaceans",               es:"Crustáceos"},
+  {n:3,  de:"Eier",                    fr:"Œufs",                         it:"Uova",                       en:"Eggs",                      es:"Huevos"},
+  {n:4,  de:"Fische",                  fr:"Poissons",                     it:"Pesce",                      en:"Fish",                      es:"Pescado"},
+  {n:5,  de:"Erdnüsse",                fr:"Arachides",                    it:"Arachidi",                   en:"Peanuts",                   es:"Cacahuetes"},
+  {n:6,  de:"Soja",                    fr:"Soja",                         it:"Soia",                       en:"Soybeans",                  es:"Soja"},
+  {n:7,  de:"Milch und Laktose",       fr:"Lait et lactose",              it:"Latte e lattosio",           en:"Milk and lactose",          es:"Leche y lactosa"},
+  {n:8,  de:"Schalenfrüchte (Nüsse)",  fr:"Fruits à coque",               it:"Frutta a guscio",            en:"Tree nuts",                 es:"Frutos de cáscara"},
+  {n:9,  de:"Sellerie",                fr:"Céleri",                       it:"Sedano",                     en:"Celery",                    es:"Apio"},
+  {n:10, de:"Senf",                    fr:"Moutarde",                     it:"Senape",                     en:"Mustard",                   es:"Mostaza"},
+  {n:11, de:"Sesam",                   fr:"Sésame",                       it:"Sesamo",                     en:"Sesame",                    es:"Sésamo"},
+  {n:12, de:"Schwefeldioxid / Sulfite",fr:"Anhydride sulfureux / sulfites",it:"Anidride solforosa / solfiti",en:"Sulphur dioxide / sulphites",es:"Dióxido de azufre / sulfitos"},
+  {n:13, de:"Lupinen",                 fr:"Lupin",                        it:"Lupini",                     en:"Lupin",                     es:"Altramuces"},
+  {n:14, de:"Weichtiere",              fr:"Mollusques",                   it:"Molluschi",                  en:"Molluscs",                  es:"Moluscos"}
+];
+
+const CATEGORIES = [
+  {id:"vorspeisen", de:"Vorspeisen",     fr:"Entrées",        it:"Antipasti",     en:"Starters"},
+  {id:"haupt",      de:"Hauptgänge",     fr:"Plats principaux",it:"Piatti principali",en:"Main courses"},
+  {id:"vegi",       de:"Vegetarisch & Vegan", fr:"Végétarien & végan", it:"Vegetariano & vegano", en:"Vegetarian & vegan"},
+  {id:"dessert",    de:"Desserts",       fr:"Desserts",       it:"Dolci",         en:"Desserts"},
+  {id:"getraenke",  de:"Getränke",       fr:"Boissons",       it:"Bevande",       en:"Drinks"}
+];
+
+const DIETS = [
+  {id:"vegetarian", de:"Vegetarisch", fr:"Végétarien", it:"Vegetariano", en:"Vegetarian", es:"Vegetariano"},
+  {id:"vegan",      de:"Vegan",       fr:"Végan",      it:"Vegano",      en:"Vegan",      es:"Vegano"},
+  {id:"glutenfree", de:"Glutenfrei",  fr:"Sans gluten",it:"Senza glutine",en:"Gluten-free",es:"Sin gluten"},
+  {id:"lactosefree",de:"Laktosefrei", fr:"Sans lactose",it:"Senza lattosio",en:"Lactose-free",es:"Sin lactosa"}
+];
+
+let TAGESMENU = {
+  date:{de:"Montag, 16. August", fr:"Lundi 16 août", it:"Lunedì 16 agosto", en:"Monday, 16 August"},
+  name:{de:"Kalbsvoressen mit Butternudeln",
+        fr:"Ragoût de veau et nouilles au beurre",
+        it:"Spezzatino di vitello con tagliatelle al burro",
+        en:"Veal stew with buttered noodles"},
+  desc:{de:"Dazu Saisonsalat und Tagessuppe.",
+        fr:"Servi avec salade de saison et soupe du jour.",
+        it:"Servito con insalata di stagione e zuppa del giorno.",
+        en:"Served with seasonal salad and soup of the day."},
+  price:24.50,
+  allergens:[1,3,7,9,12],
+  origin:{de:"Kalbfleisch: Schweiz", fr:"Veau : Suisse", it:"Vitello: Svizzera", en:"Veal: Switzerland"}
+};
+
+let DISHES = [
+  {
+    id:"gerstensuppe", cat:"vorspeisen", price:12.50, allergens:[1,7,9,12], diet:["vegetarian"],
+    name:{de:"Bündner Gerstensuppe", fr:"Soupe d'orge des Grisons", it:"Zuppa d'orzo dei Grigioni", en:"Grisons barley soup"},
+    desc:{de:"Mit Wurzelgemüse und Alpenkräutern, langsam gezogen.",
+          fr:"Aux légumes racines et herbes alpines, longuement mijotée.",
+          it:"Con ortaggi a radice ed erbe alpine, a cottura lenta.",
+          en:"With root vegetables and alpine herbs, slowly simmered."}
+  },
+  {
+    id:"forelle", cat:"vorspeisen", price:19.00, allergens:[4,7,10], diet:["glutenfree"],
+    name:{de:"Hausgeräucherte Forelle", fr:"Truite fumée maison", it:"Trota affumicata in casa", en:"House-smoked trout"},
+    desc:{de:"Auf Randenspiegel mit Meerrettichcreme.",
+          fr:"Sur lit de betterave, crème de raifort.",
+          it:"Su specchio di barbabietola con crema al rafano.",
+          en:"On a beetroot purée with horseradish cream."},
+    origin:{de:"Forelle: Schweiz, Zucht", fr:"Truite : Suisse, élevage", it:"Trota: Svizzera, allevamento", en:"Trout: Switzerland, farmed"}
+  },
+  {
+    id:"ruebli", cat:"vorspeisen", price:11.00, allergens:[10,11], diet:["vegetarian","vegan","glutenfree","lactosefree"],
+    name:{de:"Rüeblisalat mit gerösteten Kernen", fr:"Salade de carottes aux graines grillées", it:"Insalata di carote con semi tostati", en:"Carrot salad with toasted seeds"},
+    desc:{de:"Frisch gehobelt, Senf-Vinaigrette, Sesam.",
+          fr:"Râpées minute, vinaigrette moutarde, sésame.",
+          it:"Grattugiate al momento, vinaigrette alla senape, sesamo.",
+          en:"Freshly grated, mustard vinaigrette, sesame."}
+  },
+  {
+    id:"geschnetzeltes", cat:"haupt", price:38.50, allergens:[1,7,9,12], diet:[],
+    name:{de:"Zürcher Geschnetzeltes mit Rösti", fr:"Émincé de veau zurichois et rösti", it:"Spezzatino alla zurighese con rösti", en:"Zurich-style veal with rösti"},
+    desc:{de:"Kalbsrahmgeschnetzeltes mit Champignons, dazu Butterrösti.",
+          fr:"Veau à la crème et champignons, rösti au beurre.",
+          it:"Vitello alla panna con funghi, rösti al burro.",
+          en:"Creamed veal with mushrooms, buttered rösti."},
+    origin:{de:"Kalbfleisch: Schweiz", fr:"Veau : Suisse", it:"Vitello: Svizzera", en:"Veal: Switzerland"}
+  },
+  {
+    id:"cordonbleu", cat:"haupt", price:36.00, allergens:[1,3,7,10], diet:[],
+    name:{de:"Cordon bleu vom Schwein", fr:"Cordon bleu de porc", it:"Cordon bleu di maiale", en:"Pork cordon bleu"},
+    desc:{de:"Gefüllt mit Emmentaler und Rohschinken, Pommes frites.",
+          fr:"Farci d'emmental et jambon cru, frites.",
+          it:"Farcito con emmental e prosciutto crudo, patatine.",
+          en:"Filled with Emmental and cured ham, French fries."},
+    origin:{de:"Schweinefleisch: Schweiz", fr:"Porc : Suisse", it:"Maiale: Svizzera", en:"Pork: Switzerland"}
+  },
+  {
+    id:"egli", cat:"haupt", price:34.00, allergens:[1,4,7], diet:[], sold:true,
+    name:{de:"Eglifilets aus dem Vierwaldstättersee", fr:"Filets de perche du lac des Quatre-Cantons", it:"Filetti di persico del Lago dei Quattro Cantoni", en:"Perch fillets from Lake Lucerne"},
+    desc:{de:"In Butter gebraten, Zitrone, Salzkartoffeln.",
+          fr:"Poêlés au beurre, citron, pommes nature.",
+          it:"Saltati al burro, limone, patate lesse.",
+          en:"Pan-fried in butter, lemon, boiled potatoes."},
+    origin:{de:"Egli: Vierwaldstättersee, Wildfang", fr:"Perche : lac des Quatre-Cantons, sauvage", it:"Persico: Lago dei Quattro Cantoni, pescato", en:"Perch: Lake Lucerne, wild-caught"}
+  },
+  {
+    id:"magronen", cat:"haupt", price:26.50, allergens:[1,3,7], diet:["vegetarian"],
+    name:{de:"Älplermagronen", fr:"Älplermagronen", it:"Älplermagronen", en:"Alpine macaroni"},
+    desc:{de:"Mit Bergkäse, Kartoffeln, Röstzwiebeln und Apfelmus.",
+          fr:"Fromage d'alpage, pommes de terre, oignons frits, compote de pommes.",
+          it:"Formaggio d'alpe, patate, cipolle fritte e composta di mele.",
+          en:"Alpine cheese, potatoes, crispy onions and apple sauce."}
+  },
+  {
+    id:"risotto", cat:"vegi", price:27.00, allergens:[7,9,12], diet:["vegetarian","glutenfree"],
+    name:{de:"Kürbisrisotto mit Sbrinz", fr:"Risotto au potiron et sbrinz", it:"Risotto alla zucca con sbrinz", en:"Pumpkin risotto with Sbrinz"},
+    desc:{de:"Cremig gerührt, Kürbiskernöl, gehobelter Sbrinz.",
+          fr:"Crémeux, huile de courge, sbrinz en copeaux.",
+          it:"Cremoso, olio di semi di zucca, sbrinz a scaglie.",
+          en:"Creamy, pumpkin seed oil, shaved Sbrinz."}
+  },
+  {
+    id:"curry", cat:"vegi", price:24.00, allergens:[6,11], diet:["vegetarian","vegan","glutenfree","lactosefree"],
+    name:{de:"Gemüsecurry mit Basmatireis", fr:"Curry de légumes et riz basmati", it:"Curry di verdure con riso basmati", en:"Vegetable curry with basmati rice"},
+    desc:{de:"Kokosmilch, Saisongemüse, Sesam und Koriander.",
+          fr:"Lait de coco, légumes de saison, sésame et coriandre.",
+          it:"Latte di cocco, verdure di stagione, sesamo e coriandolo.",
+          en:"Coconut milk, seasonal vegetables, sesame and coriander."}
+  },
+  {
+    id:"meringue", cat:"dessert", price:13.50, allergens:[3,7], diet:["vegetarian","glutenfree"],
+    name:{de:"Meringue mit Doppelrahm", fr:"Meringue à la double crème", it:"Meringa con doppia panna", en:"Meringue with double cream"},
+    desc:{de:"Doppelrahm aus Gruyère, Beeren der Saison.",
+          fr:"Double crème de Gruyère, baies de saison.",
+          it:"Doppia panna della Gruyère, frutti di bosco di stagione.",
+          en:"Gruyère double cream, seasonal berries."}
+  },
+  {
+    id:"apfelkuechli", cat:"dessert", price:12.00, allergens:[1,3,7], diet:["vegetarian"],
+    name:{de:"Apfelküchlein mit Vanilleglace", fr:"Beignets aux pommes, glace vanille", it:"Frittelle di mele con gelato alla vaniglia", en:"Apple fritters with vanilla ice cream"},
+    desc:{de:"Im Ausbackteig, Zimtzucker.",
+          fr:"En pâte à frire, sucre à la cannelle.",
+          it:"In pastella, zucchero alla cannella.",
+          en:"In batter, cinnamon sugar."}
+  },
+  {
+    id:"sorbet", cat:"dessert", price:9.50, allergens:[], diet:["vegetarian","vegan","glutenfree","lactosefree"],
+    name:{de:"Sorbet vom Sanddorn", fr:"Sorbet à l'argousier", it:"Sorbetto all'olivello spinoso", en:"Sea buckthorn sorbet"},
+    desc:{de:"Hausgemacht, zwei Kugeln.",
+          fr:"Fait maison, deux boules.",
+          it:"Fatto in casa, due palline.",
+          en:"Homemade, two scoops."}
+  },
+  {
+    id:"suessmost", cat:"getraenke", price:5.50, allergens:[], diet:["vegetarian","vegan","glutenfree","lactosefree"],
+    name:{de:"Süssmost, naturtrüb 3 dl", fr:"Jus de pomme trouble 3 dl", it:"Succo di mela torbido 3 dl", en:"Cloudy apple juice 3 dl"},
+    desc:{de:"Aus Innerschweizer Hochstammobst.",
+          fr:"Pommes de vergers haute-tige de Suisse centrale.",
+          it:"Da frutteti ad alto fusto della Svizzera centrale.",
+          en:"From Central Swiss standard-tree orchards."}
+  },
+  {
+    id:"wein", cat:"getraenke", price:8.50, allergens:[12], diet:["vegetarian","vegan","glutenfree","lactosefree"],
+    name:{de:"Luzerner Riesling-Silvaner 1 dl", fr:"Riesling-Sylvaner lucernois 1 dl", it:"Riesling-Silvaner lucernese 1 dl", en:"Lucerne Riesling-Silvaner 1 dl"},
+    desc:{de:"Trocken, aus der Region.",
+          fr:"Sec, de la région.",
+          it:"Secco, della regione.",
+          en:"Dry, from the region."}
+  },
+  {
+    id:"kaffee", cat:"getraenke", price:4.80, allergens:[], diet:["vegetarian","vegan","glutenfree","lactosefree"],
+    name:{de:"Kaffee Crème", fr:"Café crème", it:"Caffè crème", en:"Coffee crème"},
+    desc:{de:"Milch und Rahm auf Wunsch.",
+          fr:"Lait et crème sur demande.",
+          it:"Latte e panna su richiesta.",
+          en:"Milk and cream on request."}
+  }
+];
+
+/* ------------------------------------------------------------
+   Fotos de los platos.
+   Wikimedia Commons, licencia libre — sirven para esta demo.
+   Cuando el restaurante suba las suyas, sólo cambia esta tabla.
+   ------------------------------------------------------------ */
+const PHOTO_BASE = "https://commons.wikimedia.org/wiki/Special:FilePath/";
+let PHOTO = {
+  gerstensuppe:  "Beef and barley soup with onions (4414603404) (2).jpg",
+  forelle:       "Geräuchertes Forellenfilet St. Bartholomä.JPG",
+  ruebli:        "Salad with sunflower seeds.jpg",
+  geschnetzeltes:"AIMG 1101 Zürcher Geschnetzeltes mit Rösti.JPG",
+  cordonbleu:    "Schnitzel Cordon bleu.JPG",
+  egli:          "Felchen Saibling Kretzer Filet.JPG",
+  magronen:      "Älplermagronen.JPG",
+  risotto:       "Kürbisrisotto mit karamellisierten Walnüssen (6312769345).jpg",
+  curry:         "Vegetable curry rice (14974664885).jpg",
+  meringue:      "6051 - Meiringen - Rest. Da Ernesto - MostroLuzern - Meringue.JPG",
+  apfelkuechli:  "Apfelküchlein.png",
+  sorbet:        "Strawberry sorbet (4525439412).jpg",
+  suessmost:     "Apfelsaft im Glas.jpg",
+  wein:          "White Wine Glas.jpg",
+  kaffee:        "Machwitz Kaffee Tasse Cappucino.jpg",
+  _tages:        "Kalbsvoressen.jpg"
+};
+let STRIP = ["geschnetzeltes","cordonbleu","magronen","risotto","curry","meringue"];
+
+/* ------------------------------------------------------------
+   Segunda demo: Suiza francófona.
+   Mismo producto, otra carta, otro idioma de cocina.
+   Se abre con  carta-demo.html?r=brasserie
+   ------------------------------------------------------------ */
+const BRASSERIE = {
+  restaurant:{
+    name:"Brasserie du Flon", street:"Rue de Genève 8", zip:"1003",
+    city:{de:"Lausanne", fr:"Lausanne", it:"Losanna", en:"Lausanne"},
+    since:"1927", phone:"+41 21 000 00 00",
+    region:{de:"Genfersee", fr:"Léman", it:"Lago di Ginevra", en:"Lake Geneva"},
+    kitchenLang:"fr"
+  },
+  photo:{
+    taille:"Taille aux greubons.jpg",
+    soupe:"Squash soup (Soupe de courges) @ Orsay restaurant, Lenox Hill, Upper East Side, Manhattan.jpg",
+    salade:"Salad (4).jpg",
+    perche:"Filet de perche meuniere nov 2020.jpg",
+    papet:"Papet vaudois et saucisse aux choux.jpg",
+    entrecote:"Entrecôte Café de Paris.jpg",
+    croute:"Croûte au fromage 2.jpg",
+    fondue:"Swiss fondue.jpg",
+    gratin:"Gratin courge butternut 1.jpg",
+    risotto:"뽁식당 머쉬룸 크림 리조또 1.jpg",
+    meringues:"Meringues à la crème de Gruyère.jpg",
+    tarte:"Tarte aux Pommes - Julien Plumart 2025-07-30.jpg",
+    sorbet:"Strawberry sorbet (4525439412).jpg",
+    chasselas:"White Wine Glas.jpg",
+    jus:"Apfelsaft im Glas.jpg",
+    cafe:"Machwitz Kaffee Tasse Cappucino.jpg",
+    _tages:"Papet vaudois2.jpg"
+  },
+  strip:["perche","papet","entrecote","croute","gratin","meringues"],
+  tages:{
+    date:{de:"Montag, 16. August", fr:"Lundi 16 août", it:"Lunedì 16 agosto", en:"Monday, 16 August"},
+    name:{fr:"Filets de perche du Léman, pommes nature",
+          de:"Eglifilets aus dem Genfersee mit Salzkartoffeln",
+          it:"Filetti di persico del Lago di Ginevra con patate lesse",
+          en:"Lake Geneva perch fillets with boiled potatoes"},
+    desc:{fr:"Servi avec la salade du jour.", de:"Dazu Tagessalat.",
+          it:"Servito con insalata del giorno.", en:"Served with the salad of the day."},
+    price:29.00, allergens:[1,4,7,12],
+    origin:{fr:"Perche : Léman, pêche locale", de:"Egli: Genfersee, lokaler Fang",
+            it:"Persico: Lago di Ginevra, pesca locale", en:"Perch: Lake Geneva, locally caught"}
+  },
+  dishes:[
+    {id:"taille", cat:"vorspeisen", price:9.50, allergens:[1,3,7], diet:[],
+      name:{fr:"Taillé aux greubons", de:"Taillé aux greubons", it:"Taillé aux greubons", en:"Taillé aux greubons"},
+      desc:{fr:"La spécialité vaudoise, feuilletée aux lardons de porc, servie tiède.",
+            de:"Waadtländer Blätterteigspezialität mit Schweinegrieben, lauwarm serviert.",
+            it:"Specialità vodese di pasta sfoglia con ciccioli di maiale, servita tiepida.",
+            en:"The Vaud speciality: flaky pastry with pork crackling, served warm."},
+      origin:{fr:"Porc : Suisse", de:"Schweinefleisch: Schweiz", it:"Maiale: Svizzera", en:"Pork: Switzerland"}},
+    {id:"soupe", cat:"vorspeisen", price:11.00, allergens:[7,9], diet:["vegetarian","glutenfree"],
+      name:{fr:"Soupe de courge du Gros-de-Vaud", de:"Kürbissuppe aus dem Gros-de-Vaud",
+            it:"Zuppa di zucca del Gros-de-Vaud", en:"Pumpkin soup from Gros-de-Vaud"},
+      desc:{fr:"Crème de courge, huile de courge, croûtons de la maison en option.",
+            de:"Kürbiscreme mit Kürbiskernöl, hausgemachte Croûtons auf Wunsch.",
+            it:"Crema di zucca, olio di semi di zucca, crostini della casa su richiesta.",
+            en:"Pumpkin velouté, pumpkin seed oil, house croutons on request."}},
+    {id:"salade", cat:"vorspeisen", price:9.50, allergens:[10], diet:["vegetarian","vegan","glutenfree","lactosefree"],
+      name:{fr:"Salade verte du marché", de:"Grüner Marktsalat", it:"Insalata verde del mercato", en:"Green market salad"},
+      desc:{fr:"Cueillie le matin, vinaigrette maison à la moutarde.",
+            de:"Morgens geerntet, hausgemachte Senfvinaigrette.",
+            it:"Raccolta al mattino, vinaigrette della casa alla senape.",
+            en:"Picked this morning, house mustard vinaigrette."}},
+    {id:"perche", cat:"haupt", price:42.00, allergens:[1,4,7], diet:[],
+      name:{fr:"Filets de perche du Léman, meunière", de:"Eglifilets aus dem Genfersee, meunière",
+            it:"Filetti di persico del Lago di Ginevra, meunière", en:"Lake Geneva perch fillets, meunière"},
+      desc:{fr:"Poêlés au beurre, citron, pommes nature. Le plat de la maison.",
+            de:"In Butter gebraten, Zitrone, Salzkartoffeln. Das Haus-Gericht.",
+            it:"Saltati al burro, limone, patate lesse. Il piatto della casa.",
+            en:"Pan-fried in butter, lemon, boiled potatoes. The house dish."},
+      origin:{fr:"Perche : Léman, pêche locale", de:"Egli: Genfersee, lokaler Fang",
+              it:"Persico: Lago di Ginevra, pesca locale", en:"Perch: Lake Geneva, locally caught"}},
+    {id:"papet", cat:"haupt", price:32.00, allergens:[7,9,12], diet:[],
+      name:{fr:"Papet vaudois et saucisse aux choux", de:"Waadtländer Papet mit Kohlwurst",
+            it:"Papet vodese con salsiccia al cavolo", en:"Papet vaudois with cabbage sausage"},
+      desc:{fr:"Poireaux et pommes de terre mijotés, saucisse aux choux IGP.",
+            de:"Geschmorter Lauch mit Kartoffeln, Kohlwurst IGP. Schweizer Fleisch.",
+            it:"Porri e patate stufati, salsiccia al cavolo IGP.",
+            en:"Slow-cooked leeks and potatoes, IGP cabbage sausage."},
+      origin:{fr:"Porc : Suisse, IGP", de:"Schweinefleisch: Schweiz, IGP", it:"Maiale: Svizzera, IGP", en:"Pork: Switzerland, IGP"}},
+    {id:"entrecote", cat:"haupt", price:46.00, allergens:[3,7,10], diet:[],
+      name:{fr:"Entrecôte café de Paris", de:"Entrecôte Café de Paris",
+            it:"Entrecôte café de Paris", en:"Entrecôte café de Paris"},
+      desc:{fr:"Rumsteck suisse, beurre café de Paris, frites maison.",
+            de:"Rindsentrecôte aus der Schweiz, Café-de-Paris-Butter, hausgemachte Pommes.",
+            it:"Entrecôte di manzo svizzero, burro café de Paris, patatine della casa.",
+            en:"Swiss beef, café de Paris butter, house fries."},
+      origin:{fr:"Bœuf : Suisse", de:"Rindfleisch: Schweiz", it:"Manzo: Svizzera", en:"Beef: Switzerland"}},
+    {id:"croute", cat:"haupt", price:24.50, allergens:[1,7,12], diet:["vegetarian"],
+      name:{fr:"Croûte au fromage", de:"Käseschnitte", it:"Crostone al formaggio", en:"Cheese croûte"},
+      desc:{fr:"Pain de campagne, vin blanc, Gruyère gratiné. Œuf sur demande.",
+            de:"Bauernbrot, Weisswein, überbackener Gruyère. Ei auf Wunsch.",
+            it:"Pane rustico, vino bianco, Gruyère gratinato. Uovo su richiesta.",
+            en:"Country bread, white wine, gratinated Gruyère. Egg on request."}},
+    {id:"fondue", cat:"haupt", price:29.50, allergens:[1,7,12], diet:["vegetarian"], sold:true,
+      name:{fr:"Fondue moitié-moitié", de:"Fondue halb und halb", it:"Fonduta metà e metà", en:"Half-and-half fondue"},
+      desc:{fr:"Gruyère et Vacherin fribourgeois, dès deux personnes.",
+            de:"Gruyère und Freiburger Vacherin, ab zwei Personen.",
+            it:"Gruyère e Vacherin friburghese, da due persone.",
+            en:"Gruyère and Fribourg Vacherin, from two people."}},
+    {id:"gratin", cat:"vegi", price:26.00, allergens:[7,8], diet:["vegetarian","glutenfree"],
+      name:{fr:"Gratin de courge butternut", de:"Butternut-Gratin", it:"Gratin di zucca butternut", en:"Butternut squash gratin"},
+      desc:{fr:"Crème, noisettes torréfiées, gratiné au four.",
+            de:"Rahm, geröstete Haselnüsse, im Ofen überbacken.",
+            it:"Panna, nocciole tostate, gratinato al forno.",
+            en:"Cream, toasted hazelnuts, oven-gratinated."}},
+    {id:"risotto", cat:"vegi", price:27.50, allergens:[7,9,12], diet:["vegetarian","glutenfree"],
+      name:{fr:"Risotto aux champignons", de:"Pilzrisotto", it:"Risotto ai funghi", en:"Mushroom risotto"},
+      desc:{fr:"Champignons de saison, vin blanc du Lavaux, parmesan.",
+            de:"Saisonpilze, Weisswein aus dem Lavaux, Parmesan.",
+            it:"Funghi di stagione, vino bianco del Lavaux, parmigiano.",
+            en:"Seasonal mushrooms, Lavaux white wine, parmesan."}},
+    {id:"meringues", cat:"dessert", price:13.00, allergens:[3,7], diet:["vegetarian","glutenfree"],
+      name:{fr:"Meringues à la crème de Gruyère", de:"Meringues mit Gruyère-Doppelrahm",
+            it:"Meringhe con doppia panna della Gruyère", en:"Meringues with Gruyère double cream"},
+      desc:{fr:"Le dessert romand par excellence. Deux meringues, crème double.",
+            de:"Der Westschweizer Klassiker. Zwei Meringues, Doppelrahm.",
+            it:"Il dolce romando per eccellenza. Due meringhe, doppia panna.",
+            en:"The Romandy classic. Two meringues, double cream."}},
+    {id:"tarte", cat:"dessert", price:11.50, allergens:[1,3,7], diet:["vegetarian"],
+      name:{fr:"Tarte aux pommes du verger", de:"Apfelwähe vom Hof", it:"Torta di mele del frutteto", en:"Orchard apple tart"},
+      desc:{fr:"Pâte brisée maison, pommes du canton, crème fraîche.",
+            de:"Hausgemachter Mürbeteig, Äpfel aus dem Kanton, Crème fraîche.",
+            it:"Pasta frolla della casa, mele del cantone, crème fraîche.",
+            en:"House shortcrust, cantonal apples, crème fraîche."}},
+    {id:"sorbet", cat:"dessert", price:9.50, allergens:[], diet:["vegetarian","vegan","glutenfree","lactosefree"],
+      name:{fr:"Sorbet à l'abricot du Valais", de:"Walliser Aprikosensorbet",
+            it:"Sorbetto all'albicocca del Vallese", en:"Valais apricot sorbet"},
+      desc:{fr:"Fait maison, deux boules.", de:"Hausgemacht, zwei Kugeln.",
+            it:"Fatto in casa, due palline.", en:"Homemade, two scoops."}},
+    {id:"chasselas", cat:"getraenke", price:7.50, allergens:[12], diet:["vegetarian","vegan","glutenfree","lactosefree"],
+      name:{fr:"Chasselas du Lavaux 1 dl", de:"Chasselas aus dem Lavaux 1 dl",
+            it:"Chasselas del Lavaux 1 dl", en:"Lavaux Chasselas 1 dl"},
+      desc:{fr:"Sec et minéral, des terrasses classées à l'UNESCO.",
+            de:"Trocken und mineralisch, von den UNESCO-Terrassen.",
+            it:"Secco e minerale, dalle terrazze patrimonio UNESCO.",
+            en:"Dry and mineral, from the UNESCO-listed terraces."}},
+    {id:"jus", cat:"getraenke", price:5.50, allergens:[], diet:["vegetarian","vegan","glutenfree","lactosefree"],
+      name:{fr:"Jus de pomme trouble 3 dl", de:"Naturtrüber Apfelsaft 3 dl",
+            it:"Succo di mela torbido 3 dl", en:"Cloudy apple juice 3 dl"},
+      desc:{fr:"Vergers vaudois, sans sucre ajouté.", de:"Waadtländer Obstgärten, ohne Zuckerzusatz.",
+            it:"Frutteti vodesi, senza zuccheri aggiunti.", en:"Vaud orchards, no added sugar."}},
+    {id:"cafe", cat:"getraenke", price:4.50, allergens:[], diet:["vegetarian","vegan","glutenfree","lactosefree"],
+      name:{fr:"Café", de:"Kaffee", it:"Caffè", en:"Coffee"},
+      desc:{fr:"Torréfaction lausannoise. Lait sur demande.", de:"Röstung aus Lausanne. Milch auf Wunsch.",
+            it:"Torrefazione di Losanna. Latte su richiesta.", en:"Roasted in Lausanne. Milk on request."}}
+  ]
+};
+
+if (VENUE === "brasserie"){
+  RESTAURANT = BRASSERIE.restaurant;
+  PHOTO      = BRASSERIE.photo;
+  DISHES     = BRASSERIE.dishes;
+  TAGESMENU  = BRASSERIE.tages;
+  STRIP      = BRASSERIE.strip;
+}
+
+/* Las fotos se sirven desde el propio sitio, no desde Commons.
+   Commons limita las ráfagas y en producción se caían la mayoría.
+   Para renovarlas: cambia la tabla PHOTO y ejecuta descargar_fotos.py */
+/* ?v=2 rompe la cache de un anno: sin esto, quien ya visito la carta
+   seguiria viendo las fotos antiguas aunque el fichero haya cambiado. */
+const photoURL = function(key, w){
+  if (!PHOTO[key]) return null;
+  const size = (w || 640) <= 300 ? 240 : 900;
+  return "media/photos/" + VENUE + "/" + key + "-" + size + ".jpg?v=2";
+};
+DISHES.forEach(function(d){
+  d.thumb = photoURL(d.id, 200);   // miniatura de la carta
+  d.img   = photoURL(d.id, 800);   // foto grande de la ficha
+});
+TAGESMENU.img = photoURL("_tages", 800);
+
+/* Vídeos generados con IA, sin audio. Basta con añadir el fichero
+   aquí y aparece solo en la ficha del plato, delante de la foto.
+   Van por restaurante para no montar un vídeo en el plato que no es. */
+const VIDEOS = {
+  linde:{
+    _hero:          "media/hero-gasthaus.mp4",
+    geschnetzeltes: "media/geschnetzeltes.mp4",
+    cordonbleu:     "media/cordonbleu.mp4",
+    egli:           "media/egli.mp4",
+    magronen:       "media/magronen.mp4",
+    risotto:        "media/risotto.mp4",
+    gerstensuppe:   "media/gerstensuppe.mp4",
+    meringue:       "media/meringue.mp4",
+    forelle:        "media/forelle.mp4",
+    curry:          "media/curry.mp4"
+  },
+  brasserie:{
+    _hero:      "media/hero-gasthaus.mp4",
+    perche:     "media/perche.mp4",
+    papet:      "media/papet.mp4",
+    meringues:  "media/meringue.mp4",
+    entrecote:  "media/entrecote.mp4",
+    croute:     "media/croute.mp4",
+    fondue:     "media/fondue.mp4",
+    taille:     "media/taille.mp4",
+    gratin:     "media/gratin.mp4",
+    _tagesvid:  "media/perche.mp4"
+  }
+};
+const VIDEO = VIDEOS[VENUE] || VIDEOS.linde;
+DISHES.forEach(function(d){ if (VIDEO[d.id]) d.video = VIDEO[d.id]; });
+TAGESMENU.video = VIDEO._tagesvid || null;
+
+/* ============================================================
+   2. TEXTOS DE INTERFAZ
+   ============================================================ */
+
+const UI = {
+  de:{
+    filter:"Allergien & Ernährung", tagesmenu:"Tagesmenü", apply:"Anzeigen", reset:"Zurücksetzen",
+    exclude:"Diese Allergene ausschliessen", diets:"Ernährungsweise",
+    mode:"Gerichte mit diesen Allergenen", modeMark:"markieren", modeHide:"ausblenden",
+    contains:"Enthält", noAllergens:"Enthält keines der 14 deklarationspflichtigen Allergene.",
+    origin:"Herkunft", sold:"Ausverkauft",
+    warn:"Dieses Gericht enthält von Ihnen ausgeschlossene Allergene.",
+    empty:"Mit dieser Auswahl passt kein Gericht. Bitte Filter anpassen.",
+    hiddenCount:function(n){return n+" Gericht"+(n===1?"":"e")+" ausgeblendet.";},
+    markedCount:function(n){return n+" Gericht"+(n===1?"":"e")+" markiert.";},
+    clearAll:"Alle Filter aufheben",
+    matrix:"Allergenverzeichnis", matrixDish:"Gericht", legend:"Legende",
+    matrixNote:"Vollständiges schriftliches Verzeichnis der 14 deklarationspflichtigen Allergene gemäss LIV. Automatisch aus der aktuellen Karte erzeugt.",
+    legal1:"Allergenangaben gemäss der schweizerischen Lebensmittel- und Gebrauchsgegenständeverordnung (LIV). Trotz sorgfältiger Zubereitung können in unserer Küche Spuren weiterer Allergene nicht vollständig ausgeschlossen werden.",
+    legal2:"Bei Fragen wenden Sie sich bitte an unser Servicepersonal. Auf Wunsch geben wir Ihnen gerne mündlich Auskunft.",
+    updated:"Karte zuletzt aktualisiert am",
+    prices:"Alle Preise in Schweizer Franken, inklusive MwSt."
+  },
+  fr:{
+    filter:"Allergies & alimentation", tagesmenu:"Menu du jour", apply:"Afficher", reset:"Réinitialiser",
+    exclude:"Exclure ces allergènes", diets:"Régime alimentaire",
+    mode:"Plats contenant ces allergènes", modeMark:"signaler", modeHide:"masquer",
+    contains:"Contient", noAllergens:"Ne contient aucun des 14 allergènes à déclaration obligatoire.",
+    origin:"Provenance", sold:"Épuisé",
+    warn:"Ce plat contient des allergènes que vous avez exclus.",
+    empty:"Aucun plat ne correspond à cette sélection. Veuillez ajuster les filtres.",
+    hiddenCount:function(n){return n+" plat"+(n===1?"":"s")+" masqué"+(n===1?"":"s")+".";},
+    markedCount:function(n){return n+" plat"+(n===1?"":"s")+" signalé"+(n===1?"":"s")+".";},
+    clearAll:"Effacer tous les filtres",
+    matrix:"Liste des allergènes", matrixDish:"Plat", legend:"Légende",
+    matrixNote:"Liste écrite complète des 14 allergènes à déclaration obligatoire selon l'OIDAl. Générée automatiquement à partir de la carte actuelle.",
+    legal1:"Indications sur les allergènes conformément à l'ordonnance suisse concernant l'information sur les denrées alimentaires (OIDAl). Malgré tout le soin apporté à la préparation, des traces d'autres allergènes ne peuvent être totalement exclues dans notre cuisine.",
+    legal2:"Pour toute question, adressez-vous à notre personnel de service. Nous vous renseignons volontiers oralement sur demande.",
+    updated:"Carte mise à jour le",
+    prices:"Tous les prix en francs suisses, TVA incluse."
+  },
+  it:{
+    filter:"Allergie & alimentazione", tagesmenu:"Menu del giorno", apply:"Mostra", reset:"Reimposta",
+    exclude:"Escludere questi allergeni", diets:"Regime alimentare",
+    mode:"Piatti contenenti questi allergeni", modeMark:"segnalare", modeHide:"nascondere",
+    contains:"Contiene", noAllergens:"Non contiene nessuno dei 14 allergeni a dichiarazione obbligatoria.",
+    origin:"Provenienza", sold:"Esaurito",
+    warn:"Questo piatto contiene allergeni da lei esclusi.",
+    empty:"Nessun piatto corrisponde a questa selezione. Modifichi i filtri.",
+    hiddenCount:function(n){return n+" piatt"+(n===1?"o":"i")+" nascost"+(n===1?"o":"i")+".";},
+    markedCount:function(n){return n+" piatt"+(n===1?"o":"i")+" segnalat"+(n===1?"o":"i")+".";},
+    clearAll:"Rimuovi tutti i filtri",
+    matrix:"Elenco degli allergeni", matrixDish:"Piatto", legend:"Legenda",
+    matrixNote:"Elenco scritto completo dei 14 allergeni a dichiarazione obbligatoria secondo l'OID. Generato automaticamente dalla carta attuale.",
+    legal1:"Indicazioni sugli allergeni secondo l'ordinanza svizzera sulle derrate alimentari (OID). Nonostante la massima cura nella preparazione, non possiamo escludere del tutto tracce di altri allergeni nella nostra cucina.",
+    legal2:"Per domande si rivolga al nostro personale di servizio. Su richiesta forniamo volentieri informazioni orali.",
+    updated:"Carta aggiornata il",
+    prices:"Tutti i prezzi in franchi svizzeri, IVA inclusa."
+  },
+  en:{
+    filter:"Allergies & diet", tagesmenu:"Menu of the day", apply:"Show", reset:"Reset",
+    exclude:"Exclude these allergens", diets:"Dietary preference",
+    mode:"Dishes containing these allergens", modeMark:"flag", modeHide:"hide",
+    contains:"Contains", noAllergens:"Contains none of the 14 allergens subject to mandatory declaration.",
+    origin:"Origin", sold:"Sold out",
+    warn:"This dish contains allergens you have excluded.",
+    empty:"No dish matches this selection. Please adjust the filters.",
+    hiddenCount:function(n){return n+" dish"+(n===1?"":"es")+" hidden.";},
+    markedCount:function(n){return n+" dish"+(n===1?"":"es")+" flagged.";},
+    clearAll:"Clear all filters",
+    matrix:"Allergen index", matrixDish:"Dish", legend:"Legend",
+    matrixNote:"Complete written index of the 14 allergens subject to mandatory declaration under Swiss FIO. Generated automatically from the current menu.",
+    legal1:"Allergen information in accordance with the Swiss Ordinance on Food Information (FIO). Despite careful preparation, traces of other allergens cannot be entirely ruled out in our kitchen.",
+    legal2:"If you have any questions, please ask our service staff. We are happy to provide the information orally on request.",
+    updated:"Menu last updated on",
+    prices:"All prices in Swiss francs, VAT included."
+  }
+};
+
+const UPDATED = {de:"14. August 2026", fr:"14 août 2026", it:"14 agosto 2026", en:"14 August 2026"};
+
+/* ============================================================
+   3. ESTADO
+   ============================================================ */
+
+const state = {
+  lang:DEFAULT_LANG,
+  excluded:new Set(),   // números de alérgeno excluidos
+  diets:new Set(),      // ids de dieta requeridos
+  mode:"hide"           // "hide" | "mark"
+};
+
+const $  = function(s){ return document.querySelector(s); };
+const $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
+const t  = function(){ return UI[state.lang]; };
+const esc = function(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+};
+const money = function(v){ return "CHF " + v.toFixed(2); };
+
+/* Detecta el idioma del navegador — igual que en producción */
+(function detectLang(){
+  const supported = ["de","fr","it","en"];
+  const list = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || DEFAULT_LANG];
+  for (let i=0;i<list.length;i++){
+    const code = String(list[i]).slice(0,2).toLowerCase();
+    if (supported.indexOf(code) !== -1){ state.lang = code; return; }
+  }
+})();
+
+/* ============================================================
+   4. LÓGICA DE FILTRADO
+   ============================================================ */
+
+function dishFails(d){
+  // ¿contiene algún alérgeno excluido?
+  for (const n of state.excluded){
+    if (d.allergens.indexOf(n) !== -1) return true;
+  }
+  // ¿cumple todas las dietas exigidas?
+  for (const id of state.diets){
+    if (d.diet.indexOf(id) === -1) return true;
+  }
+  return false;
+}
+
+function filterCount(){ return state.excluded.size + state.diets.size; }
+
+/* ============================================================
+   5. RENDERIZADO
+   ============================================================ */
+
+function renderNav(){
+  $("#navchips").innerHTML = CATEGORIES.map(function(c){
+    return '<a href="#sec-'+c.id+'">'+esc(c[state.lang])+'</a>';
+  }).join("");
+}
+
+function renderTages(){
+  const L = state.lang, m = TAGESMENU;
+  const codes = m.allergens.map(function(n){
+    return '<span class="acode">'+n+'</span>';
+  }).join("");
+  $("#tages").innerHTML =
+    '<div class="label">'+esc(t().tagesmenu)+'</div>'+
+    '<div class="date">'+esc(m.date[L])+'</div>'+
+    '<h2 id="tagesTitle">'+esc(m.name[L])+'</h2>'+
+    '<p>'+esc(m.desc[L])+'</p>'+
+    (m.video
+      ? '<video class="shot" src="'+esc(m.video)+'" muted autoplay loop playsinline></video>'
+      : (m.img ? '<span class="shotwrap"><img class="shot" src="'+esc(m.img)+'" alt="'+esc(m.name[L])+'" decoding="async"></span>' : ""))+
+    '<div class="foot">'+
+      '<div class="codes">'+codes+'</div>'+
+      '<div class="price">'+money(m.price)+'</div>'+
+    '</div>';
+}
+
+function dishHTML(d){
+  const L = state.lang;
+  const fails = dishFails(d);
+  let cls = "dish";
+  if (fails && state.mode === "hide") cls += " hidden";
+  if (fails && state.mode === "mark") cls += " dimmed";
+  if (d.sold) cls += " sold";
+
+  const badges = d.diet.filter(function(id){
+    return id === "vegan" || id === "vegetarian" || id === "glutenfree";
+  }).map(function(id){
+    const dd = DIETS.find(function(x){ return x.id === id; });
+    return '<span class="badge">'+esc(dd[L])+'</span>';
+  }).join("");
+
+  const codes = d.allergens.map(function(n){
+    const hit = state.excluded.has(n) ? " hit" : "";
+    return '<span class="acode'+hit+'">'+n+'</span>';
+  }).join("");
+
+  const origin = d.origin ? '<div class="origin">'+esc(d.origin[L])+'</div>' : "";
+  const soldTag = d.sold ? '<span class="soldtag">'+esc(t().sold)+'</span>' : "";
+
+  /* El video de la miniatura se engancha solo cuando la tarjeta entra en
+     pantalla (data-lazy). El poster es un fotograma del propio video, asi que
+     el relevo no se nota. Antes se descargaban los 17 videos de golpe al abrir
+     la carta (~23 MB por visita) y eso agoto la cuota del alojamiento. */
+  const thumb = d.video
+    ? '<video class="thumb" data-lazy="'+esc(d.video)+'"'+(d.thumb ? ' poster="'+esc(d.thumb)+'"' : '')+' muted loop playsinline preload="none"></video>'
+    : (d.thumb
+      ? '<img class="thumb" src="'+esc(d.thumb)+'" alt="" loading="lazy" decoding="async">'
+      : '<span class="thumb"></span>');
+
+  return '<button type="button" class="'+cls+'" data-dish="'+d.id+'">'+
+    thumb +
+    '<span class="col">'+
+      '<span class="top">'+
+        '<span class="name">'+esc(d.name[L])+'</span>'+
+        '<span class="price">'+money(d.price)+'</span>'+
+      '</span>'+
+      '<span class="desc">'+esc(d.desc[L])+'</span>'+
+      origin+
+      '<span class="meta">'+soldTag+badges+codes+'</span>'+
+    '</span>'+
+  '</button>';
+}
+
+function renderMenu(){
+  const html = CATEGORIES.map(function(c){
+    const list = DISHES.filter(function(d){ return d.cat === c.id; });
+    const rows = list.map(dishHTML).join("");
+    // ¿queda algún plato visible en esta sección?
+    const anyVisible = list.some(function(d){
+      return !(dishFails(d) && state.mode === "hide");
+    });
+    return '<section class="section" id="sec-'+c.id+'"'+(anyVisible?"":' hidden')+'>'+
+      '<h2>'+esc(c[state.lang])+'</h2><div class="rule"></div>'+rows+
+    '</section>';
+  }).join("");
+  $("#menu").innerHTML = html;
+
+  const totalVisible = DISHES.filter(function(d){
+    return !(dishFails(d) && state.mode === "hide");
+  }).length;
+  const empty = $("#emptynote");
+  empty.textContent = t().empty;
+  empty.classList.toggle("show", totalVisible === 0);
+}
+
+function renderActiveNote(){
+  const box = $("#activenote");
+  const n = filterCount();
+  if (n === 0){ box.classList.remove("show"); box.innerHTML = ""; return; }
+
+  const affected = DISHES.filter(dishFails).length;
+  const line = state.mode === "hide" ? t().hiddenCount(affected) : t().markedCount(affected);
+  const names = [];
+  state.excluded.forEach(function(num){
+    const a = ALLERGENS.find(function(x){ return x.n === num; });
+    if (a) names.push(a[state.lang]);
+  });
+  state.diets.forEach(function(id){
+    const dd = DIETS.find(function(x){ return x.id === id; });
+    if (dd) names.push(dd[state.lang]);
+  });
+
+  box.innerHTML = '<strong>'+esc(names.join(" · "))+'</strong><br>'+
+    '<span class="num">'+esc(line)+'</span><br>'+
+    '<button type="button" id="clearAll">'+esc(t().clearAll)+'</button>';
+  box.classList.add("show");
+  $("#clearAll").addEventListener("click", function(){
+    state.excluded.clear(); state.diets.clear(); renderAll();
+  });
+}
+
+/* Todo lo que es texto fijo del HTML también cambia de idioma.
+   Lo único que se queda siempre en alemán es lo que ve el personal:
+   la comanda de cocina y la tablet del camarero. Es deliberado. */
+const CHROME = {
+  de:{menu:"Speisekarte", since:"seit", close:"Schliessen", langNav:"Sprache", catNav:"Kategorien", waiterBtn:"Smart Waiter fragen"},
+  fr:{menu:"Carte",       since:"depuis", close:"Fermer",  langNav:"Langue", catNav:"Catégories", waiterBtn:"Demander au Smart Waiter"},
+  it:{menu:"Carta",       since:"dal",   close:"Chiudi",   langNav:"Lingua", catNav:"Categorie", waiterBtn:"Chiedi allo Smart Waiter"},
+  en:{menu:"Menu",        since:"since", close:"Close",    langNav:"Language", catNav:"Categories", waiterBtn:"Ask the Smart Waiter"}
+};
+
+/* Identidad del restaurante en todas partes, desde RESTAURANT */
+function restCity(){ return RESTAURANT.city[state.lang] || RESTAURANT.city.de; }
+function restRegion(){ return RESTAURANT.region[state.lang] || RESTAURANT.region.de; }
+function restAddress(){ return RESTAURANT.street + " · " + RESTAURANT.zip + " " + restCity(); }
+
+function renderIdentity(){
+  const c = CHROME[state.lang];
+  // El nombre se parte: primera palabra fina, el resto en negrita
+  const parts = RESTAURANT.name.split(" ");
+  const first = parts.shift();
+  $("#mhName").innerHTML = '<span class="lt">'+esc(first)+'</span> '+esc(parts.join(" "));
+  $("#mhStreet").textContent = RESTAURANT.street;
+  $("#mhCity").textContent = RESTAURANT.zip + " " + restCity();
+  $("#mhSince").textContent = c.since + " " + RESTAURANT.since;
+  document.title = RESTAURANT.name + " — " + c.menu;
+}
+
+function renderChrome(){
+  document.documentElement.lang = state.lang;
+  const c = CHROME[state.lang];
+  $("#mhEyebrow").textContent = c.menu;
+  renderIdentity();
+  $("#waiterFab").setAttribute("aria-label", c.waiterBtn);
+  $("#langbar").setAttribute("aria-label", c.langNav);
+  $("#navchips").setAttribute("aria-label", c.catNav);
+  $$("[data-close]").forEach(function(b){ b.setAttribute("aria-label", c.close); });
+  $("#filterLabel").textContent = t().filter;
+  $("#sfTitle").textContent = t().filter;
+  $("#smTitle").textContent = t().matrix;
+  $("#resetFilter").textContent = t().reset;
+  $("#applyFilter").textContent = t().apply;
+  $("#openMatrix").setAttribute("aria-label", t().matrix);
+
+  const n = filterCount();
+  const cnt = $("#filterCount");
+  cnt.textContent = String(n);
+  cnt.hidden = n === 0;
+  $("#openFilter").classList.toggle("on", n > 0);
+
+  $$("#langbar button").forEach(function(b){
+    b.setAttribute("aria-pressed", b.dataset.lang === state.lang ? "true" : "false");
+  });
+
+  const m = M[state.lang];
+  $("#legal").innerHTML =
+    '<p>'+esc(t().legal1)+'</p>'+
+    '<p>'+esc(t().legal2)+'</p>'+
+    '<p>'+esc(t().prices)+'</p>'+
+    '<p>'+esc(t().updated)+' '+esc(UPDATED[state.lang])+'.</p>'+
+    '<p class="brand">'+esc(RESTAURANT.name + " · " + restAddress() + " · " + RESTAURANT.phone)+'</p>'+
+    // Interruptor sólo para la demo: en producción es un ajuste del restaurante.
+    '<div class="demoswitch"><span class="dl">'+esc(m.demo)+'</span>'+
+      '<div class="modeswitch" id="orderMode">'+
+        '<button type="button" data-om="kitchen" aria-pressed="'+(state.orderMode==="kitchen")+'">'+esc(m.kitchen)+'</button>'+
+        '<button type="button" data-om="waiter" aria-pressed="'+(state.orderMode==="waiter")+'">'+esc(m.waiter)+'</button>'+
+      '</div></div>';
+  $$("#orderMode button").forEach(function(b){
+    b.addEventListener("click", function(){
+      state.orderMode = b.dataset.om;
+      state.sentAt = null; state.confirmed = false;
+      renderChrome();
+    });
+  });
+}
+
+function renderFilterSheet(){
+  const L = state.lang;
+  const modeHTML =
+    '<div class="grouplabel">'+esc(t().mode)+'</div>'+
+    '<div class="modeswitch" id="modeswitch">'+
+      '<button type="button" data-mode="hide" aria-pressed="'+(state.mode==="hide")+'">'+esc(t().modeHide)+'</button>'+
+      '<button type="button" data-mode="mark" aria-pressed="'+(state.mode==="mark")+'">'+esc(t().modeMark)+'</button>'+
+    '</div>';
+
+  const dietsHTML =
+    '<div class="grouplabel">'+esc(t().diets)+'</div>'+
+    '<div class="chipwrap" id="dietwrap">'+
+      DIETS.map(function(d){
+        return '<button type="button" class="chip" data-diet="'+d.id+'" aria-pressed="'+state.diets.has(d.id)+'">'+esc(d[L])+'</button>';
+      }).join("")+
+    '</div>';
+
+  const allergensHTML =
+    '<div class="grouplabel">'+esc(t().exclude)+'</div>'+
+    '<div class="alist" id="alist">'+
+      ALLERGENS.map(function(a){
+        return '<button type="button" class="arow" data-allergen="'+a.n+'" aria-pressed="'+state.excluded.has(a.n)+'">'+
+          '<span class="num">'+a.n+'</span>'+
+          '<span class="txt">'+esc(a[L])+'</span>'+
+          '<span class="tick">✕</span>'+
+        '</button>';
+      }).join("")+
+    '</div>';
+
+  $("#sfBody").innerHTML = modeHTML + dietsHTML + allergensHTML;
+
+  $$("#modeswitch button").forEach(function(b){
+    b.addEventListener("click", function(){
+      state.mode = b.dataset.mode;
+      renderFilterSheet(); renderAll();
+    });
+  });
+  $$("#dietwrap .chip").forEach(function(b){
+    b.addEventListener("click", function(){
+      const id = b.dataset.diet;
+      if (state.diets.has(id)) state.diets.delete(id); else state.diets.add(id);
+      b.setAttribute("aria-pressed", state.diets.has(id));
+      renderAll();
+    });
+  });
+  $$("#alist .arow").forEach(function(b){
+    b.addEventListener("click", function(){
+      const n = Number(b.dataset.allergen);
+      if (state.excluded.has(n)) state.excluded.delete(n); else state.excluded.add(n);
+      b.setAttribute("aria-pressed", state.excluded.has(n));
+      renderAll();
+    });
+  });
+}
+
+function renderDish(id){
+  const L = state.lang;
+  const d = DISHES.find(function(x){ return x.id === id; });
+  if (!d) return;
+
+  $("#sdTitle").textContent = d.name[L];
+
+  const fails = dishFails(d);
+  const warn = fails ? '<div class="dd-warn"><span class="sym">!</span><span>'+esc(t().warn)+'</span></div>' : "";
+  const soldBlock = d.sold ? '<div class="dd-warn"><span class="sym">–</span><span>'+esc(t().sold)+'</span></div>' : "";
+
+  const allergenBlock = d.allergens.length
+    ? '<div class="dd-block"><h4>'+esc(t().contains)+'</h4><ul>'+
+        d.allergens.map(function(n){
+          const a = ALLERGENS.find(function(x){ return x.n === n; });
+          return '<li><span class="num">'+n+'</span>'+esc(a[L])+'</li>';
+        }).join("")+
+      '</ul></div>'
+    : '<div class="dd-block none"><p>'+esc(t().noAllergens)+'</p></div>';
+
+  const dietBlock = d.diet.length
+    ? '<div class="dd-block"><h4>'+esc(t().diets)+'</h4><div class="chipwrap">'+
+        d.diet.map(function(id2){
+          const dd = DIETS.find(function(x){ return x.id === id2; });
+          return '<span class="badge">'+esc(dd[L])+'</span>';
+        }).join("")+
+      '</div></div>'
+    : "";
+
+  const originBlock = d.origin
+    ? '<div class="dd-block"><h4>'+esc(t().origin)+'</h4><p style="margin:0;font-size:14px">'+esc(d.origin[L])+'</p></div>'
+    : "";
+
+  // El campo d.video / d.img es opcional: en cuanto el restaurante los sube, aparecen aquí.
+  const media = d.video
+    ? '<video class="shot" src="'+esc(d.video)+'" autoplay muted loop playsinline></video>'
+    : (d.img ? '<span class="shotwrap"><img class="shot" src="'+esc(d.img)+'" alt="'+esc(d.name[L])+'"></span>' : "");
+
+  const o = O[state.lang];
+  const inCart = cartQty(d.id);
+  const addRow = d.sold
+    ? '<div class="addrow"><button type="button" class="addbtn" disabled>'+esc(o.soldout)+'</button></div>'
+    : '<div class="addrow"><button type="button" class="addbtn" id="addBtn">'+
+        esc(inCart ? o.inOrder + " (" + inCart + ")" : o.add)+'</button></div>';
+
+  $("#sdBody").innerHTML =
+    '<div class="dd-price">'+money(d.price)+'</div>'+
+    media +
+    '<p class="dd-desc">'+esc(d.desc[L])+'</p>'+
+    soldBlock + warn + allergenBlock + dietBlock + originBlock + addRow +
+    '<p class="matrixnote">'+esc(t().legal2)+'</p>';
+
+  const ab = $("#addBtn");
+  if (ab) ab.addEventListener("click", function(){
+    cartAdd(d.id);
+    ab.textContent = O[state.lang].inOrder + " (" + cartQty(d.id) + ")";
+  });
+}
+
+function renderMatrix(){
+  const L = state.lang;
+  const head = '<tr><th class="dishcol">'+esc(t().matrixDish)+'</th>'+
+    ALLERGENS.map(function(a){
+      return '<th title="'+esc(a[L])+'">'+a.n+'</th>';
+    }).join("")+'</tr>';
+
+  const rowsFor = function(cat){
+    return DISHES.filter(function(d){ return d.cat === cat.id; }).map(function(d){
+      return '<tr><th class="dishcol">'+esc(d.name[L])+'</th>'+
+        ALLERGENS.map(function(a){
+          const has = d.allergens.indexOf(a.n) !== -1;
+          return '<td class="'+(has?"yes":"no")+'">'+(has?"■":"·")+'</td>';
+        }).join("")+'</tr>';
+    }).join("");
+  };
+
+  const body = CATEGORIES.map(function(c){
+    return '<tr class="catrow"><th class="dishcol">'+esc(c[L])+'</th><td colspan="14"></td></tr>' + rowsFor(c);
+  }).join("");
+
+  const legendHTML = ALLERGENS.map(function(a){
+    return '<div><span class="num">'+a.n+'</span><span>'+esc(a[L])+'</span></div>';
+  }).join("");
+
+  $("#smBody").innerHTML =
+    '<div class="matrixwrap"><table class="matrix"><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>'+
+    '<p class="matrixnote">'+esc(t().matrixNote)+'</p>'+
+    '<div class="grouplabel" style="margin-top:26px">'+esc(t().legend)+'</div>'+
+    '<div class="legendgrid">'+legendHTML+'</div>';
+}
+
+function renderAll(){
+  renderChrome();
+  renderNav();
+  renderTages();
+  renderMenu();
+  renderActiveNote();
+  renderWaiterChrome();
+  renderCart();
+  if (state.wq) runWaiter(state.wq);   // el camarero respeta filtros e idioma
+}
+
+/* ============================================================
+   5b. SMART WAITER
+   El restaurante no configura nada: el perfil de cada plato
+   (ligero/contundente, carne, pescado, regional) se DERIVA de
+   la carta al crearla. En producción esa derivación la hace un
+   LLM una sola vez y se guarda; aquí se calcula al cargar para
+   que la demo funcione sin servidor ni clave de API.
+   ============================================================ */
+
+const norm = function(s){
+  return String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+};
+const has = function(txt, arr){
+  for (let i=0;i<arr.length;i++){ if (txt.indexOf(arr[i]) !== -1) return true; }
+  return false;
+};
+
+/* --- Derivación del perfil de cada plato --- */
+function buildProfile(d){
+  const txt = norm(d.name.de + " " + d.desc.de + " " + (d.origin ? d.origin.de : ""));
+  const meatW  = ["kalb","schwein","rind","fleisch","schinken","speck","wurst","huhn","poulet","lamm","voressen","geschnetzeltes","cordon bleu"];
+  const fishW  = ["forelle","egli","fisch","lachs"];
+  const localW = ["bundner","luzern","vierwaldstatter","alpler","zurcher","emmental","sbrinz","gruyere","innerschweiz","schweiz","region","alpen",
+                  "genfersee","waadt","lavaux","leman","walliser","freiburger","kanton","hof"];
+  const lightW = ["salat","suppe","sorbet"];
+  const heartyW= ["rosti","cordon","magronen","frites","nudeln"];
+
+  const isFish = has(txt, fishW) || d.allergens.indexOf(4) !== -1;
+  const isMeat = !isFish && has(txt, meatW);
+
+  let weight = "medium";
+  if (has(txt, lightW) || d.price < 14) weight = "light";
+  else if (has(txt, heartyW) || d.price >= 30) weight = "hearty";
+
+  // Tipo de bebida, para no ofrecer zumo cuando piden vino
+  let drink = null;
+  if (d.cat === "getraenke"){
+    if (has(txt, ["riesling","silvaner","wein","weisswein","rotwein"])) drink = "wine";
+    else if (has(txt, ["kaffee","espresso","cappuccino","crema"])) drink = "coffee";
+    else drink = "soft";
+  }
+
+  return {
+    isFish:isFish, isMeat:isMeat, isLocal:has(txt, localW), weight:weight,
+    isDrink:d.cat === "getraenke", isSweet:d.cat === "dessert", drink:drink
+  };
+}
+DISHES.forEach(function(d){ d.p = buildProfile(d); });
+
+/* --- Vocabulario de intención (DE/FR/IT/EN + ES para turistas) --- */
+const KW = {
+  vegetarian:["vegetarisch","vegetarien","vegetariano","vegetarian","fleischlos","meatless","veggie"],
+  noMeat:["ohne fleisch","kein fleisch","keine fleisch","sans viande","senza carne","no meat","without meat","sin carne"],
+  vegan:["vegan","vegano"],
+  light:["leicht","nicht schwer","nicht zu schwer","leger","legere","leggero","light","ligero","ligera","not heavy"],
+  filling:["sattig","deftig","wahrschaft","kraftig","copieux","rassasi","nourrissant","sostanzioso","abbondante","filling","hearty","substantial","que llene","contundente","llene","llenar"],
+  fish:["fisch","poisson","pesce","fish","pescado"],
+  sweet:["suss","dessert","sucre","dolce","sweet","postre","dulce","nachtisch"],
+  local:["regional","einheimisch","typisch","spezialitat","typique","tipico","typical","specialit","tipica","local"],
+  cheap:["gunstig","billig","preiswert","pas cher","economique","economico","cheap","affordable","barato"],
+  glutenfree:["glutenfrei","sans gluten","senza glutine","gluten-free","gluten free","sin gluten","zoliakie","coeliac","celiac","celiaco"],
+  lactosefree:["laktosefrei","sans lactose","senza lattosio","lactose free","lactose-free","sin lactosa"],
+  surprise:["uberrasch","surprends","surprise","sorprend","sorpresa","empfehl","recommand","consiglia","recommend","recomienda","suggest"],
+  drink:["wein","getrank","trinken","vin","boisson","vino","bevanda","drink","wine","bebida","beber"],
+  /* Estados del comensal — se comprueban ANTES que los deseos, porque
+     "no tengo mucha hambre" contiene "mucha hambre". */
+  notHungry:["nicht viel hunger","wenig hunger","keinen grossen hunger","nicht sehr hungrig",
+             "nicht so hungrig","kleine portion","kleinigkeit","nur eine kleinigkeit",
+             "pas tres faim","petite faim","petit creux","pas trop faim","pas grand faim",
+             "poco appetito","non ho molta fame","poca fame","non ho tanta fame",
+             "not very hungry","not that hungry","not too hungry","small portion","light bite","not much of an appetite",
+             "no tengo mucha hambre","no mucha hambre","poca hambre","sin mucha hambre","algo pequeno","no tengo hambre"],
+  veryHungry:["grossen hunger","sehr hungrig","riesenhunger","barenhunger","richtig hunger",
+              "tres faim","grosse faim","tres grand faim",
+              "molta fame","tanta fame","affamato",
+              "very hungry","really hungry","starving","big appetite",
+              "mucha hambre","muerto de hambre","hambriento"],
+  quick:["schnell","eilig","in eile","zugig","presse","rapide","depeche",
+         "veloce","fretta","corsa","quick","in a hurry","hurry","fast","rapido","prisa","deprisa","apuro"]
+};
+
+const ALLERGEN_KW = {
+  1:["gluten","weizen","wheat","trigo","getreide"],
+  2:["krebstier","crustac","crostace","crustacean","marisco","gamba"],
+  3:["eier","oeuf","uova","uovo","egg","huevo"],
+  4:["fisch","poisson","pesce","fish","pescado"],
+  5:["erdnuss","arachide","peanut","cacahuete"],
+  6:["soja","soy"],
+  7:["milch","laktose","lait","latte","lattosio","milk","leche","lactose"],
+  8:["nusse","nuss","noix","noci","nut","fruto seco","frutos secos","schalenfrucht","mandel"],
+  9:["sellerie","celeri","sedano","celery","apio"],
+  10:["senf","moutarde","senape","mustard","mostaza"],
+  11:["sesam","sesame","sesamo"],
+  12:["sulfit","sulfite","solfiti","sulphite","sulfito","schwefel"],
+  13:["lupin","lupine","altramuz"],
+  14:["weichtier","mollusque","mollusc","mollusco","molusco"]
+};
+
+/* --- Interpretación de la pregunta --- */
+function parseQuery(raw){
+  const txt = norm(raw);
+  const intent = {
+    excludeMeat:false, excludeFish:false, vegetarian:false, vegan:false,
+    light:false, filling:false, balanced:false,
+    notHungry:false, veryHungry:false, quick:false,
+    wantFish:false, wantSweet:false, wantDrink:false, local:false, cheap:false, surprise:false,
+    wantWine:false, wantCoffee:false, wantSoft:false,
+    glutenfree:false, lactosefree:false,
+    allergens:[]
+  };
+
+  if (has(txt, KW.vegetarian)){ intent.vegetarian = true; intent.excludeMeat = true; intent.excludeFish = true; }
+  if (has(txt, KW.noMeat))    { intent.excludeMeat = true; }
+  if (has(txt, KW.vegan))     { intent.vegan = true; intent.excludeMeat = true; intent.excludeFish = true; }
+
+  // Estado del comensal antes que sus deseos: "no tengo mucha hambre"
+  // contiene literalmente "mucha hambre".
+  intent.notHungry  = has(txt, KW.notHungry);
+  intent.veryHungry = !intent.notHungry && has(txt, KW.veryHungry);
+  intent.quick      = has(txt, KW.quick);
+
+  intent.light   = has(txt, KW.light)   || intent.notHungry;
+  intent.filling = has(txt, KW.filling) || intent.veryHungry;
+  intent.balanced = intent.light && intent.filling && !intent.notHungry;
+
+  intent.local    = has(txt, KW.local);
+  intent.cheap    = has(txt, KW.cheap);
+  intent.surprise = has(txt, KW.surprise);
+  intent.wantSweet= has(txt, KW.sweet);
+  // Tipo de bebida pedida. hasWord evita que "vin" case con "vinaigrette".
+  const hasWord = function(s, words){
+    for (let i=0;i<words.length;i++){
+      if (new RegExp("(^|[^a-z])"+words[i]+"([^a-z]|$)").test(s)) return true;
+    }
+    return false;
+  };
+  if (hasWord(txt,["vin","vino"]) || has(txt,["wein","wine","riesling","silvaner"])) intent.wantWine = true;
+  if (has(txt,["kaffee","cafe","caffe","coffee","espresso","cappuccino"])) intent.wantCoffee = true;
+  if (has(txt,["saft","most","jus ","succo","juice","alkoholfrei","sans alcool","analcolico","non-alcoholic","sin alcohol","zumo"])) intent.wantSoft = true;
+  intent.wantDrink= has(txt, KW.drink) || intent.wantWine || intent.wantCoffee || intent.wantSoft;
+  intent.glutenfree  = has(txt, KW.glutenfree);
+  intent.lactosefree = has(txt, KW.lactosefree);
+
+  // Alérgenos: sólo cuentan si van detrás de una negación ("ohne …", "sin …")
+  const windows = [];
+  const re = /(ohne|keine|kein|sans|senza|without|sin|no)\s+([a-z\s\-]{1,30})/g;
+  let m;
+  while ((m = re.exec(txt)) !== null){ windows.push(m[2]); }
+  Object.keys(ALLERGEN_KW).forEach(function(k){
+    const n = Number(k);
+    for (let i=0;i<windows.length;i++){
+      if (has(windows[i], ALLERGEN_KW[n])){ if (intent.allergens.indexOf(n) === -1) intent.allergens.push(n); break; }
+    }
+  });
+  if (intent.glutenfree  && intent.allergens.indexOf(1) === -1) intent.allergens.push(1);
+  if (intent.lactosefree && intent.allergens.indexOf(7) === -1) intent.allergens.push(7);
+  if (intent.allergens.indexOf(4) !== -1) intent.excludeFish = true;
+
+  // Pescado como deseo, no como exclusión
+  intent.wantFish = has(txt, KW.fish) && !intent.excludeFish;
+
+  return intent;
+}
+
+/* --- Puntuación --- */
+function scoreDish(d, intent){
+  const p = d.p;
+  if (d.sold) return null;
+  if (p.isDrink && !intent.wantDrink) return null;
+  if (intent.excludeMeat && p.isMeat) return null;
+  if (intent.excludeFish && p.isFish) return null;
+  if (intent.vegan && d.diet.indexOf("vegan") === -1) return null;
+  if (intent.vegetarian && d.diet.indexOf("vegetarian") === -1) return null;
+  if (intent.glutenfree && d.diet.indexOf("glutenfree") === -1) return null;
+  if (intent.lactosefree && d.diet.indexOf("lactosefree") === -1) return null;
+  for (let i=0;i<intent.allergens.length;i++){
+    if (d.allergens.indexOf(intent.allergens[i]) !== -1) return null;
+  }
+  // El camarero respeta también los filtros que el comensal ya puso en la carta
+  if (dishFails(d)) return null;
+
+  let s = 0;
+  if (intent.balanced)      s += (p.weight === "medium") ? 5 : 1;
+  else if (intent.light)    s += (p.weight === "light") ? 4 : (p.weight === "medium" ? 1 : -3);
+  else if (intent.filling)  s += (p.weight === "hearty") ? 4 : (p.weight === "medium" ? 1 : -3);
+
+  if (intent.wantFish && !p.isFish) return null;   // si pide pescado, sólo pescado
+  if (intent.wantSweet) s += p.isSweet ? 5 : -4;
+  else if (p.isSweet)   s -= 1;
+  if (intent.wantDrink) s += p.isDrink ? 5 : -5;
+  // Si piden un tipo concreto de bebida, sólo ese tipo
+  if (p.isDrink){
+    if (intent.wantWine   && p.drink !== "wine")   return null;
+    if (intent.wantCoffee && p.drink !== "coffee") return null;
+    if (intent.wantSoft   && p.drink !== "soft")   return null;
+  }
+  if (intent.local)     s += p.isLocal ? 3 : -1;
+  if (intent.cheap)     s += (35 - d.price) / 8;
+
+  // Poca hambre: entrantes y postres suben, y el precio bajo ayuda
+  if (intent.notHungry){
+    if (d.cat === "vorspeisen") s += 3;
+    else if (d.cat === "dessert") s += 1;
+    else if (d.cat === "haupt") s -= 2;
+    s += (30 - d.price) / 12;
+  }
+  // Con prisa: lo que sale antes de cocina
+  if (intent.quick){
+    if (d.cat === "vorspeisen") s += 2.5;
+    if (d.price < 20) s += 1;
+    if (p.weight === "hearty") s -= 1.5;
+  }
+
+  if (p.isLocal) s += 1;                       // el carácter de la casa cuenta
+  if (d.cat === "haupt" && !intent.wantSweet && !intent.wantDrink && !intent.notHungry) s += 0.5;
+  return s;
+}
+
+function recommend(intent){
+  const scored = [];
+  DISHES.forEach(function(d){
+    const s = scoreDish(d, intent);
+    if (s !== null && s > -2) scored.push({d:d, s:s});
+  });
+  scored.sort(function(a,b){ return b.s - a.s || a.d.price - b.d.price; });
+  return scored.slice(0, 3).map(function(x){ return x.d; });
+}
+
+/* --- El "porqué" --- */
+function reasonFor(d, intent, RL){
+  const L = RL || state.lang;
+  const f = W[L].frag, p = d.p, parts = [];
+
+  if (intent.balanced && p.weight === "medium") parts.push(f.balanced);
+  else if (intent.light && p.weight === "light") parts.push(f.light);
+  else if (intent.filling && p.weight === "hearty") parts.push(f.filling);
+
+  if (intent.vegan) parts.push(f.vegan);
+  else if (intent.vegetarian) parts.push(f.vegetarian);
+  else if (intent.excludeMeat) parts.push(f.noMeat);
+
+  if (intent.wantFish && p.isFish) parts.push(p.isLocal ? f.fishLocal : f.fish);
+  if (intent.glutenfree) parts.push(f.glutenfree);
+  if (intent.lactosefree) parts.push(f.lactosefree);
+
+  intent.allergens.forEach(function(n){
+    if (n === 1 && intent.glutenfree) return;
+    if (n === 7 && intent.lactosefree) return;
+    const a = ALLERGENS.find(function(x){ return x.n === n; });
+    if (a) parts.push(f.free(a[L]));
+  });
+
+  if (intent.cheap) parts.push(f.cheap);
+  if (intent.local && p.isLocal) parts.push(f.local);
+
+  // Un rasgo propio del plato, para que dos recomendaciones nunca
+  // se justifiquen con exactamente la misma frase.
+  let own = f.classic;
+  if (p.isFish) own = p.isLocal ? f.fishLocal : f.fish;
+  else if (d.diet.indexOf("vegan") !== -1) own = f.vegan;
+  else if (p.isLocal) own = f.local;
+  else if (p.weight === "light") own = f.light;
+  else if (p.weight === "hearty") own = f.filling;
+
+  const shown = parts.slice(0, 2);
+  if (shown.indexOf(own) === -1) shown.push(own);
+
+  const s = shown.join(", ");
+  return s.charAt(0).toUpperCase() + s.slice(1) + ".";
+}
+
+/* --- La respuesta hablada: contesta a lo que han preguntado --- */
+function speak(intent, picks, RL){
+  const s = W[RL].say;
+  const top = picks[0];
+  // El nombre del plato va en el idioma de la carta; la frase, en el del comensal
+  const slot = function(tpl){
+    return tpl.replace("{d}", dishName(top, state.lang)).replace("{p}", money(top.price));
+  };
+
+  let lead;
+  const constrained = intent.allergens.length || intent.glutenfree || intent.lactosefree ||
+                      intent.vegan || intent.vegetarian || intent.excludeMeat;
+
+  if (intent.notHungry)       lead = slot(s.notHungry);
+  else if (intent.veryHungry) lead = slot(s.veryHungry);
+  else if (intent.quick)      lead = slot(s.quick);
+  else if (intent.wantDrink)  lead = slot(s.drink);
+  else if (intent.wantSweet)  lead = slot(s.sweet);
+  else if (intent.wantFish)   lead = slot(s.fish);
+  else if (intent.balanced)   lead = slot(s.balanced);
+  else if (intent.light)      lead = slot(s.light);
+  else if (intent.filling)    lead = slot(s.filling);
+  else if (constrained)       lead = slot(s.constrained) + " " + reasonFor(top, intent, RL);
+  else                        lead = slot(s.generic) + " " + reasonFor(top, intent, RL);
+
+  const rest = picks.length - 1;
+  const more = rest > 0 ? " " + (rest === 1 ? s.more1 : s.moreN.replace("{n}", rest)) : "";
+  return lead + more;
+}
+
+/* --- Maridaje: también derivado, sin configurar nada --- */
+function pairFor(d){
+  if (d.p.isDrink) return null;
+  let id = "wein";
+  if (d.p.isSweet) id = "kaffee";
+  else if (d.diet.indexOf("vegan") !== -1) id = "suessmost";
+  const pick = DISHES.find(function(x){ return x.id === id; });
+  return (pick && !pick.sold) ? pick : null;
+}
+
+/* --- Textos del Smart Waiter --- */
+const W = {
+  de:{
+    hint:"fragen Sie wie einer Person",
+    placeholder:"z. B. leicht, aber sättigend, ohne Fleisch",
+    send:"Fragen", understood:"Verstanden",
+    pair:"Dazu passt gut", none:"Dazu finde ich auf der aktuellen Karte nichts Passendes. Formulieren Sie es gerne anders — oder fragen Sie unser Servicepersonal.",
+    disclaimer:"Empfehlungen aus der aktuellen Karte berechnet. Der Betrieb konfiguriert nichts.",
+    suggestions:["Ich habe nicht viel Hunger","Etwas Leichtes ohne Fleisch","Glutenfrei, überraschen Sie mich","Ich habe es eilig"],
+    say:{
+      notHungry:"Wenn Sie nicht viel Hunger haben, nehmen Sie {d} für {p}. Die Portion ist klein gehalten und liegt leicht auf — Sie stehen nicht schwer vom Tisch auf.",
+      veryHungry:"Bei richtigem Hunger: {d} für {p}. Das ist die währschafteste Portion auf unserer Karte.",
+      quick:"Wenn es schnell gehen muss, nehmen Sie {d} für {p}. Das kommt am zügigsten aus der Küche.",
+      drink:"Zu trinken empfehle ich Ihnen {d} für {p}.",
+      sweet:"Zum Süssen: {d} für {p}.",
+      fish:"Fisch haben wir: {d} für {p}.",
+      balanced:"Dann passt {d} für {p} — sättigend, ohne dass es schwer im Magen liegt.",
+      light:"Etwas Leichtes: {d} für {p}.",
+      filling:"Etwas Kräftiges: {d} für {p}.",
+      constrained:"Passend zu Ihren Angaben: {d} für {p}.",
+      generic:"Ich würde Ihnen {d} für {p} empfehlen.",
+      more1:"Eine weitere Möglichkeit steht darunter.",
+      moreN:"{n} weitere Vorschläge stehen darunter."
+    },
+    frag:{
+      balanced:"sättigend, ohne schwer zu sein", light:"leicht", filling:"kräftig und sättigend",
+      noMeat:"ohne Fleisch", vegetarian:"vegetarisch", vegan:"vollständig vegan",
+      fish:"Fisch", fishLocal:"Fisch aus dem See vor der Tür",
+      glutenfree:"glutenfrei", lactosefree:"laktosefrei",
+      cheap:"die günstigste passende Option", local:"eine Spezialität aus der Region",
+      classic:"ein Klassiker unserer Küche",
+      free:function(x){ return "ohne " + x; }
+    }
+  },
+  fr:{
+    hint:"demandez comme à une personne",
+    placeholder:"p. ex. léger mais nourrissant, sans viande",
+    send:"Demander", understood:"Compris",
+    pair:"À accompagner de", none:"Je ne trouve rien qui corresponde sur la carte actuelle. Reformulez, ou demandez à notre personnel.",
+    disclaimer:"Recommandations calculées à partir de la carte actuelle. L'établissement ne configure rien.",
+    suggestions:["Je n'ai pas très faim","Quelque chose de léger sans viande","Sans gluten, surprenez-moi","Je suis pressé"],
+    say:{
+      notHungry:"Si vous n'avez pas très faim, prenez {d} à {p}. La portion reste petite et se digère facilement — vous ne quitterez pas la table alourdi.",
+      veryHungry:"Avec une vraie faim : {d} à {p}. C'est la portion la plus copieuse de la carte.",
+      quick:"Si vous êtes pressé, prenez {d} à {p}. C'est ce qui sort le plus vite de la cuisine.",
+      drink:"À boire, je vous conseille {d} à {p}.",
+      sweet:"Pour le sucré : {d} à {p}.",
+      fish:"Nous avons du poisson : {d} à {p}.",
+      balanced:"Alors {d} à {p} vous conviendra — nourrissant sans peser sur l'estomac.",
+      light:"Quelque chose de léger : {d} à {p}.",
+      filling:"Quelque chose de consistant : {d} à {p}.",
+      constrained:"Correspondant à vos indications : {d} à {p}.",
+      generic:"Je vous conseillerais {d} à {p}.",
+      more1:"Une autre possibilité figure ci-dessous.",
+      moreN:"{n} autres suggestions figurent ci-dessous."
+    },
+    frag:{
+      balanced:"nourrissant sans être lourd", light:"léger", filling:"copieux et rassasiant",
+      noMeat:"sans viande", vegetarian:"végétarien", vegan:"entièrement végan",
+      fish:"du poisson", fishLocal:"du poisson du lac voisin",
+      glutenfree:"sans gluten", lactosefree:"sans lactose",
+      cheap:"l'option la plus abordable", local:"une spécialité de la région",
+      classic:"un classique de la maison",
+      free:function(x){ return "sans " + x; }
+    }
+  },
+  it:{
+    hint:"chieda come a una persona",
+    placeholder:"p. es. leggero ma sostanzioso, senza carne",
+    send:"Chiedi", understood:"Capito",
+    pair:"Si abbina bene a", none:"Sulla carta attuale non trovo nulla di adatto. Provi a riformulare, o chieda al nostro personale.",
+    disclaimer:"Consigli calcolati dalla carta attuale. Il locale non configura nulla.",
+    suggestions:["Non ho molta fame","Qualcosa di leggero senza carne","Senza glutine, mi sorprenda","Ho fretta"],
+    say:{
+      notHungry:"Se non ha molta fame, prenda {d} a {p}. La porzione è contenuta e si digerisce bene — non si alzerà da tavola appesantito.",
+      veryHungry:"Con una fame vera: {d} a {p}. È la porzione più sostanziosa della carta.",
+      quick:"Se ha fretta, prenda {d} a {p}. È quello che esce prima dalla cucina.",
+      drink:"Da bere le consiglio {d} a {p}.",
+      sweet:"Per il dolce: {d} a {p}.",
+      fish:"Di pesce abbiamo {d} a {p}.",
+      balanced:"Allora {d} a {p} fa al caso suo — sostanzioso senza pesare sullo stomaco.",
+      light:"Qualcosa di leggero: {d} a {p}.",
+      filling:"Qualcosa di sostanzioso: {d} a {p}.",
+      constrained:"In linea con quanto ci ha indicato: {d} a {p}.",
+      generic:"Le consiglierei {d} a {p}.",
+      more1:"Qui sotto trova un'altra possibilità.",
+      moreN:"Qui sotto trova altri {n} suggerimenti."
+    },
+    frag:{
+      balanced:"sostanzioso senza essere pesante", light:"leggero", filling:"ricco e sostanzioso",
+      noMeat:"senza carne", vegetarian:"vegetariano", vegan:"completamente vegano",
+      fish:"pesce", fishLocal:"pesce del lago qui davanti",
+      glutenfree:"senza glutine", lactosefree:"senza lattosio",
+      cheap:"l'opzione più conveniente", local:"una specialità della regione",
+      classic:"un classico della casa",
+      free:function(x){ return "senza " + x; }
+    }
+  },
+  en:{
+    hint:"ask it like you'd ask a person",
+    placeholder:"e.g. light but filling, no meat",
+    send:"Ask", understood:"Understood",
+    pair:"Goes well with", none:"Nothing on the current menu fits that. Try phrasing it differently, or ask our staff.",
+    disclaimer:"Recommendations computed from the current menu. The restaurant configures nothing.",
+    suggestions:["I'm not very hungry","Something light without meat","Gluten-free, surprise me","I'm in a hurry"],
+    say:{
+      notHungry:"If you're not very hungry, have the {d} at {p}. The portion is deliberately small and sits lightly — you won't leave the table feeling heavy.",
+      veryHungry:"For a real appetite: {d} at {p}. It's the heartiest portion on our menu.",
+      quick:"If you're in a hurry, have the {d} at {p}. That's the quickest thing out of the kitchen.",
+      drink:"To drink, I'd suggest {d} at {p}.",
+      sweet:"For something sweet: {d} at {p}.",
+      fish:"We do have fish: {d} at {p}.",
+      balanced:"Then the {d} at {p} suits you — filling without sitting heavy.",
+      light:"Something light: {d} at {p}.",
+      filling:"Something substantial: {d} at {p}.",
+      constrained:"Matching what you told me: {d} at {p}.",
+      generic:"I'd recommend the {d} at {p}.",
+      more1:"One more option is shown below.",
+      moreN:"{n} more suggestions are shown below."
+    },
+    frag:{
+      balanced:"filling without being heavy", light:"light", filling:"rich and filling",
+      noMeat:"no meat", vegetarian:"vegetarian", vegan:"fully vegan",
+      fish:"fish", fishLocal:"fish from the lake outside",
+      glutenfree:"gluten-free", lactosefree:"lactose-free",
+      cheap:"the best-value match", local:"a regional speciality",
+      classic:"a house classic",
+      free:function(x){ return "no " + x; }
+    }
+  }
+};
+
+/* --- Idioma de la respuesta ---
+   El camarero contesta en el idioma en que le hablan, no en el de
+   la carta. Un turista español puede leer la carta en alemán y
+   preguntar en español: la respuesta sale en español. */
+const W_ES = {
+  hint:"pregunte como se lo diría a una persona",
+  placeholder:"p. ej. algo ligero pero que llene, sin carne",
+  send:"Preguntar", understood:"Entendido",
+  pair:"Marida bien con",
+  none:"En la carta de hoy no encuentro nada que encaje. Pruebe a decirlo de otra forma, o pregunte a nuestro personal.",
+  disclaimer:"Recomendaciones calculadas sobre la carta actual. El restaurante no configura nada.",
+  suggestions:["No tengo mucha hambre","Algo ligero sin carne","Sin gluten, sorpréndame","Tengo prisa"],
+  frag:{
+    balanced:"llena sin resultar pesado", light:"ligero", filling:"contundente y saciante",
+    noMeat:"sin carne", vegetarian:"vegetariano", vegan:"totalmente vegano",
+    fish:"pescado", fishLocal:"pescado del lago de aquí al lado",
+    glutenfree:"sin gluten", lactosefree:"sin lactosa",
+    cheap:"la opción más económica", local:"una especialidad de la región",
+    classic:"un clásico de la casa",
+    free:function(x){ return "sin " + x.toLowerCase(); }
+  },
+  say:{
+    notHungry:"Si no tiene mucha hambre, pida {d} por {p}. La ración es pequeña y sienta ligera — no se levantará pesado de la mesa.",
+    veryHungry:"Con hambre de verdad: {d} por {p}. Es la ración más contundente de la carta.",
+    quick:"Si tiene prisa, pida {d} por {p}. Es lo que antes sale de la cocina.",
+    drink:"Para beber le recomiendo {d} por {p}.",
+    sweet:"Para el postre: {d} por {p}.",
+    fish:"De pescado tenemos {d} por {p}.",
+    balanced:"Entonces le va bien {d} por {p} — llena sin resultar pesado.",
+    light:"Algo ligero: {d} por {p}.",
+    filling:"Algo contundente: {d} por {p}.",
+    constrained:"Acorde con lo que me indica: {d} por {p}.",
+    generic:"Yo le recomendaría {d} por {p}.",
+    more1:"Justo debajo tiene otra opción.",
+    moreN:"Justo debajo tiene {n} sugerencias más."
+  }
+};
+
+/* Palabras funcionales por idioma. Bastan para saber en qué idioma
+   se ha escrito una frase corta de carta. */
+const LANGCUES = {
+  de:["ich","habe","etwas","ohne","nicht","bitte","hunger","moechte","mochte","sie","was","gibt","kein","mir","einen","eine","gerne","empfehlen","schnell","und","mit","auf"],
+  fr:["je","jai","pas","quelque","chose","sans","faim","avez","voudrais","vous","quoi","une","des","les","du","avec","recommandez","pressé","presse","suis","nai"],
+  it:["ho","non","qualcosa","senza","fame","vorrei","mi","che","cosa","del","con","consiglia","fretta","sono","una","molta","poco"],
+  en:["i","im","not","something","without","hungry","would","want","what","you","recommend","hurry","have","the","and","with","very","really"],
+  es:["que","algo","tengo","hambre","sin","por","favor","recomiendas","recomienda","quiero","muy","pero","llene","me","un","una","con","prisa","mucha","poca","ligero"]
+};
+
+function detectQueryLang(raw){
+  const txt = " " + norm(raw).replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ") + " ";
+  const score = {};
+  Object.keys(LANGCUES).forEach(function(l){
+    score[l] = 0;
+    LANGCUES[l].forEach(function(w){ if (txt.indexOf(" " + w + " ") !== -1) score[l]++; });
+  });
+  let best = null, bestN = 0;
+  Object.keys(score).forEach(function(l){ if (score[l] > bestN){ bestN = score[l]; best = l; } });
+  // Sin señal clara, se responde en el idioma de la carta
+  return bestN >= 1 && best ? best : state.lang;
+}
+
+/* Textos del camarero, con el español añadido como idioma de respuesta */
+W.es = W_ES;
+
+/* Nombre del plato: los platos sólo existen en los idiomas de la
+   carta, así que para el español se usa el de la carta. */
+function dishName(d, L){ return d.name[L] || d.name[state.lang]; }
+
+/* --- Render --- */
+function renderWaiterChrome(){
+  const w = W[state.lang];
+  $("#wHint").textContent = w.hint;
+  $("#wInput").placeholder = w.placeholder;
+  $("#wSend").textContent = w.send;
+  $("#wSuggest").innerHTML = w.suggestions.map(function(s){
+    return '<button type="button" data-q="'+esc(s)+'">'+esc(s)+'</button>';
+  }).join("");
+}
+
+function runWaiter(raw){
+  const out = $("#wOut");
+  const q = String(raw || "").trim();
+  state.wq = q;
+  if (!q){ out.classList.remove("show"); out.innerHTML = ""; return; }
+
+  const RL = detectQueryLang(q);      // idioma en que responde
+  const w = W[RL];
+  const intent = parseQuery(q);
+  const picks = recommend(intent);
+
+  // Etiquetas de lo que ha entendido
+  const chips = [];
+  if (intent.vegan) chips.push(w.frag.vegan);
+  else if (intent.vegetarian) chips.push(w.frag.vegetarian);
+  else if (intent.excludeMeat) chips.push(w.frag.noMeat);
+  if (intent.balanced) chips.push(w.frag.balanced);
+  else if (intent.light) chips.push(w.frag.light);
+  else if (intent.filling) chips.push(w.frag.filling);
+  if (intent.wantFish) chips.push(w.frag.fish);
+  if (intent.wantSweet) chips.push(w.frag.classic);
+  if (intent.glutenfree) chips.push(w.frag.glutenfree);
+  if (intent.lactosefree) chips.push(w.frag.lactosefree);
+  if (intent.cheap) chips.push(w.frag.cheap);
+  if (intent.local) chips.push(w.frag.local);
+  intent.allergens.forEach(function(n){
+    if ((n === 1 && intent.glutenfree) || (n === 7 && intent.lactosefree)) return;
+    const a = ALLERGENS.find(function(x){ return x.n === n; });
+    if (a) chips.push(w.frag.free(a[RL]));
+  });
+
+  const readHTML = chips.length
+    ? '<div class="wread"><span class="rl">'+esc(w.understood)+'</span>'+
+        chips.map(function(c){ return '<span class="rc">'+esc(c)+'</span>'; }).join("")+
+      '</div>'
+    : "";
+
+  if (!picks.length){
+    out.innerHTML = readHTML + '<p class="wnone">'+esc(w.none)+'</p>'+
+      '<p class="wdisclaimer">'+esc(w.disclaimer)+'</p>';
+    out.classList.add("show");
+    return;
+  }
+
+  const L = state.lang;
+  const cards = picks.map(function(d, i){
+    const codes = d.allergens.map(function(n){ return '<span class="acode">'+n+'</span>'; }).join("");
+    // El campo d.img es opcional: en cuanto el restaurante suba fotos, aparecen aquí.
+    const shot = d.video
+      ? '<video class="shot" src="'+esc(d.video)+'" autoplay muted loop playsinline preload="none"></video>'
+      : (d.img ? '<span class="shotwrap"><img class="shot" src="'+esc(d.img)+'" alt="'+esc(d.name[L])+'"></span>' : "");
+    return '<button type="button" class="wcard" data-dish="'+d.id+'">'+
+      '<div class="top">'+
+        '<span><span class="rank">'+(i+1)+'</span><span class="name">'+esc(d.name[L])+'</span></span>'+
+        '<span class="price">'+money(d.price)+'</span>'+
+      '</div>'+
+      shot+
+      '<p class="why">'+esc(reasonFor(d, intent, RL))+'</p>'+
+      (codes ? '<div class="codes">'+codes+'</div>' : "")+
+    '</button>';
+  }).join("");
+
+  const pair = pairFor(picks[0]);
+  const pairHTML = pair
+    ? '<p class="wpair">'+esc(w.pair)+' <b>'+esc(pair.name[L])+'</b> <span class="p">'+money(pair.price)+'</span></p>'
+    : "";
+
+  out.innerHTML =
+    '<p class="wanswer">'+esc(speak(intent, picks, RL))+'</p>'+
+    readHTML + '<div class="wlist">'+cards+'</div>' + pairHTML +
+    '<p class="wdisclaimer">'+esc(w.disclaimer)+'</p>';
+  out.classList.add("show");
+}
+
+/* ============================================================
+   5c. PEDIDO DESDE LA MESA → COCINA
+   La comanda sale SIEMPRE en el idioma del restaurante (alemán),
+   aunque el comensal haya pedido en inglés o italiano. Y los
+   alérgenos que el comensal excluyó viajan con la comanda.
+   ============================================================ */
+
+const O = {
+  de:{
+    title:"Ihre Bestellung", order:"Bestellen", positions:"Positionen",
+    add:"Zur Bestellung hinzufügen", inOrder:"In der Bestellung",
+    empty:"Sie haben noch nichts ausgewählt.",
+    table:"Tischnummer", total:"Total", send:"An die Küche senden",
+    sentTitle:"An die Küche gesendet.",
+    sentBody:function(tb,n,tm){ return "Tisch "+tb+" · "+n+" Positionen · "+tm+" Uhr"; },
+    kitchen:"Was die Küche sieht",
+    kitchenNote:"Die Küche erhält die Bestellung immer auf {kl} — unabhängig davon, in welcher Sprache der Gast bestellt hat.",
+    newOrder:"Neue Bestellung", upsell:"Dazu passt gut", soldout:"Ausverkauft"
+  },
+  fr:{
+    title:"Votre commande", order:"Commander", positions:"articles",
+    add:"Ajouter à la commande", inOrder:"Dans la commande",
+    empty:"Vous n'avez encore rien choisi.",
+    table:"Numéro de table", total:"Total", send:"Envoyer en cuisine",
+    sentTitle:"Envoyé en cuisine.",
+    sentBody:function(tb,n,tm){ return "Table "+tb+" · "+n+" articles · "+tm; },
+    kitchen:"Ce que voit la cuisine",
+    kitchenNote:"La cuisine reçoit toujours la commande en {kl}, quelle que soit la langue du client.",
+    newOrder:"Nouvelle commande", upsell:"À accompagner de", soldout:"Épuisé"
+  },
+  it:{
+    title:"Il suo ordine", order:"Ordina", positions:"voci",
+    add:"Aggiungi all'ordine", inOrder:"Nell'ordine",
+    empty:"Non ha ancora scelto nulla.",
+    table:"Numero del tavolo", total:"Totale", send:"Invia in cucina",
+    sentTitle:"Inviato in cucina.",
+    sentBody:function(tb,n,tm){ return "Tavolo "+tb+" · "+n+" voci · "+tm; },
+    kitchen:"Cosa vede la cucina",
+    kitchenNote:"La cucina riceve sempre l'ordine in {kl}, indipendentemente dalla lingua del cliente.",
+    newOrder:"Nuovo ordine", upsell:"Si abbina bene a", soldout:"Esaurito"
+  },
+  en:{
+    title:"Your order", order:"Order", positions:"items",
+    add:"Add to order", inOrder:"In your order",
+    empty:"You haven't chosen anything yet.",
+    table:"Table number", total:"Total", send:"Send to kitchen",
+    sentTitle:"Sent to the kitchen.",
+    sentBody:function(tb,n,tm){ return "Table "+tb+" · "+n+" items · "+tm; },
+    kitchen:"What the kitchen sees",
+    kitchenNote:"The kitchen always receives the order in {kl}, whatever language the guest ordered in.",
+    newOrder:"New order", upsell:"Goes well with", soldout:"Sold out"
+  }
+};
+
+/* Modos de pedido. Se configura por restaurante:
+   "kitchen" — la comanda va directa a cocina. Terrazas, cabañas, autoservicio.
+   "waiter"  — pre-comanda: llega a la tablet del camarero, que la confirma y
+               la mete en la caja. Elimina el problema de la cuenta y hace
+               vendible el producto al restaurante clásico. */
+const M = {
+  de:{
+    demo:"Demo · Bestellmodus", kitchen:"Direkt an die Küche", waiter:"Vorbestellung an den Kellner",
+    sendWaiter:"An den Kellner senden",
+    sentWaiterTitle:"Beim Kellner eingegangen.",
+    sentWaiterBody:function(tb,n,tm){ return "Tisch "+tb+" · "+n+" Positionen · "+tm+" Uhr. Der Kellner bestätigt und übernimmt sie in die Kasse."; },
+    tablet:"Was der Kellner sieht", confirm:"Bestätigen und in die Kasse",
+    tabletNote:"Erst nach der Bestätigung geht die Bestellung an die Küche. So bleibt die Rechnung in der Kasse vollständig und niemand tippt etwas zweimal.",
+    pending:"Offen", guest:"Gast"
+  },
+  fr:{
+    demo:"Démo · Mode de commande", kitchen:"Direct en cuisine", waiter:"Pré-commande au serveur",
+    sendWaiter:"Envoyer au serveur",
+    sentWaiterTitle:"Reçue par le serveur.",
+    sentWaiterBody:function(tb,n,tm){ return "Table "+tb+" · "+n+" articles · "+tm+". Le serveur confirme et la saisit en caisse."; },
+    tablet:"Ce que voit le serveur", confirm:"Confirmer et envoyer en caisse",
+    tabletNote:"La commande ne part en cuisine qu'après confirmation. L'addition reste complète en caisse et personne ne saisit deux fois.",
+    pending:"En attente", guest:"Client"
+  },
+  it:{
+    demo:"Demo · Modalità d'ordine", kitchen:"Diretto in cucina", waiter:"Pre-ordine al cameriere",
+    sendWaiter:"Invia al cameriere",
+    sentWaiterTitle:"Ricevuto dal cameriere.",
+    sentWaiterBody:function(tb,n,tm){ return "Tavolo "+tb+" · "+n+" voci · "+tm+". Il cameriere conferma e lo inserisce in cassa."; },
+    tablet:"Cosa vede il cameriere", confirm:"Conferma e invia in cassa",
+    tabletNote:"L'ordine parte in cucina solo dopo la conferma. Il conto resta completo in cassa e nessuno digita due volte.",
+    pending:"In attesa", guest:"Cliente"
+  },
+  en:{
+    demo:"Demo · Order mode", kitchen:"Straight to the kitchen", waiter:"Pre-order to the waiter",
+    sendWaiter:"Send to the waiter",
+    sentWaiterTitle:"Received by the waiter.",
+    sentWaiterBody:function(tb,n,tm){ return "Table "+tb+" · "+n+" items · "+tm+". The waiter confirms it and enters it into the till."; },
+    tablet:"What the waiter sees", confirm:"Confirm and send to the till",
+    tabletNote:"The order only reaches the kitchen after confirmation, so the bill stays complete in the till and nobody keys anything twice.",
+    pending:"Pending", guest:"Guest"
+  }
+};
+
+state.cart = [];      // [{id, qty}]
+state.table = "12";
+state.sentAt = null;
+state.orderMode = "kitchen";   // "kitchen" | "waiter"
+state.confirmed = false;       // sólo en modo "waiter"
+
+function cartLine(id){ return state.cart.find(function(x){ return x.id === id; }); }
+function cartQty(id){ const l = cartLine(id); return l ? l.qty : 0; }
+function cartCount(){ return state.cart.reduce(function(a,x){ return a + x.qty; }, 0); }
+function cartTotal(){
+  return state.cart.reduce(function(a,x){
+    const d = DISHES.find(function(y){ return y.id === x.id; });
+    return a + (d ? d.price * x.qty : 0);
+  }, 0);
+}
+function cartAdd(id, n){
+  const d = DISHES.find(function(x){ return x.id === id; });
+  if (!d || d.sold) return;
+  const l = cartLine(id);
+  if (l) l.qty += (n || 1); else state.cart.push({id:id, qty:(n || 1)});
+  state.sentAt = null;
+  renderCart();
+}
+function cartSet(id, q){
+  const i = state.cart.findIndex(function(x){ return x.id === id; });
+  if (i === -1) return;
+  if (q <= 0) state.cart.splice(i, 1); else state.cart[i].qty = q;
+  renderCart();
+  renderOrderSheet();
+}
+
+function renderCart(){
+  const o = O[state.lang];
+  const n = cartCount();
+  $("#cartN").textContent = n + " " + o.positions;
+  $("#cartT").textContent = money(cartTotal());
+  $("#openOrder").textContent = o.order;
+  $("#cartbar").classList.toggle("show", n > 0);
+  document.body.classList.toggle("has-cart", n > 0);
+}
+
+/* Rótulos de la comanda, en el idioma de la cocina */
+const KITCHEN = {
+  de:{table:"TISCH",  guest:"GAST: OHNE",    total:"TOTAL"},
+  fr:{table:"TABLE",  guest:"CLIENT: SANS",  total:"TOTAL"},
+  it:{table:"TAVOLO", guest:"CLIENTE: SENZA",total:"TOTALE"},
+  en:{table:"TABLE",  guest:"GUEST: NO",     total:"TOTAL"}
+};
+const KL = function(){ return RESTAURANT.kitchenLang; };
+
+/* Nota para la cocina con los alérgenos que el comensal excluyó */
+function guestAllergenNote(){
+  if (!state.excluded.size) return null;
+  const names = [];
+  state.excluded.forEach(function(n){
+    const a = ALLERGENS.find(function(x){ return x.n === n; });
+    if (a) names.push(a[KL()]);   // siempre en el idioma de la cocina
+  });
+  return names.join(", ");
+}
+
+function ticketHTML(){
+  const time = state.sentAt || "--:--";
+  const k = KITCHEN[KL()];
+  const rule = "------------------------------";
+  let s = k.table + " " + state.table + "        " + time + "\n" + rule + "\n";
+  state.cart.forEach(function(x){
+    const d = DISHES.find(function(y){ return y.id === x.id; });
+    if (d) s += String(x.qty) + "x  " + d.name[KL()] + "\n";
+  });
+  s = esc(s);
+  const note = guestAllergenNote();
+  if (note) s += '<span class="hl">' + esc("!! " + k.guest + " " + note.toUpperCase()) + "</span>\n";
+  s += esc(rule + "\n" + k.total.padEnd(15, " ") + money(cartTotal()));
+  return s;
+}
+
+function renderOrderSheet(){
+  const o = O[state.lang], L = state.lang;
+  const body = $("#soBody"), foot = $("#soFoot");
+  $("#soTitle").textContent = o.title;
+
+  const m = M[state.lang];
+
+  // Modo pre-comanda: el pedido espera en la tablet del camarero
+  if (state.sentAt && state.orderMode === "waiter" && !state.confirmed){
+    const note = guestAllergenNote();
+    const k = KITCHEN[KL()];
+    const rows = state.cart.map(function(x){
+      const d = DISHES.find(function(y){ return y.id === x.id; });
+      return d ? '<div class="trow"><span class="tq">'+x.qty+'×</span><span>'+esc(d.name[KL()])+'</span></div>' : "";
+    }).join("");
+    body.innerHTML =
+      '<div class="sentwrap">'+
+        '<div class="ok"><span class="sym">✓</span><span><b>'+esc(m.sentWaiterTitle)+'</b><br>'+
+          esc(m.sentWaiterBody(state.table, cartCount(), state.sentAt))+'</span></div>'+
+        '<div class="ticketlabel">'+esc(m.tablet)+'</div>'+
+        '<div class="tablet">'+
+          '<div class="thead"><b>'+esc(k.table+" "+state.table)+'</b>'+
+            '<span class="pend">'+esc(m.pending)+' · '+esc(state.sentAt)+'</span></div>'+
+          rows +
+          (note ? '<div class="tnote">'+esc(k.guest+" "+note.toUpperCase())+'</div>' : "")+
+          '<button type="button" class="tconfirm" id="confirmOrder">'+esc(m.confirm)+'</button>'+
+        '</div>'+
+        '<p class="matrixnote">'+esc(m.tabletNote)+'</p>'+
+      '</div>';
+    foot.innerHTML = '<button type="button" class="btn-ghost" id="newOrder">'+esc(o.newOrder)+'</button>';
+    $("#confirmOrder").addEventListener("click", function(){
+      state.confirmed = true;
+      renderOrderSheet();
+    });
+    $("#newOrder").addEventListener("click", function(){
+      state.cart = []; state.sentAt = null; state.confirmed = false;
+      renderCart(); sheetClose();
+    });
+    return;
+  }
+
+  // Comanda en cocina (directa, o ya confirmada por el camarero)
+  if (state.sentAt){
+    body.innerHTML =
+      '<div class="sentwrap">'+
+        '<div class="ok"><span class="sym">✓</span><span><b>'+esc(o.sentTitle)+'</b><br>'+
+          esc(o.sentBody(state.table, cartCount(), state.sentAt))+'</span></div>'+
+        '<div class="ticketlabel">'+esc(o.kitchen)+'</div>'+
+        '<div class="ticket">'+ticketHTML()+'</div>'+
+        '<p class="matrixnote">'+esc(o.kitchenNote.replace("{kl}", LANGNAMES[state.lang][KL()]))+'</p>'+
+      '</div>';
+    foot.innerHTML = '<button type="button" class="btn-ghost" id="newOrder">'+esc(o.newOrder)+'</button>';
+    $("#newOrder").addEventListener("click", function(){
+      state.cart = []; state.sentAt = null; state.confirmed = false;
+      renderCart(); sheetClose();
+    });
+    return;
+  }
+
+  if (!state.cart.length){
+    body.innerHTML = '<p class="wnone">'+esc(o.empty)+'</p>';
+    foot.innerHTML = "";
+    return;
+  }
+
+  const lines = state.cart.map(function(x){
+    const d = DISHES.find(function(y){ return y.id === x.id; });
+    if (!d) return "";
+    return '<div class="oline">'+
+      '<div style="flex:1;min-width:0">'+
+        '<div class="oname">'+esc(d.name[L])+'</div>'+
+        '<div class="osub">'+money(d.price)+' · '+esc(d.allergens.join(", ") || "—")+'</div>'+
+      '</div>'+
+      '<div class="qty" data-id="'+d.id+'">'+
+        '<button type="button" data-step="-1" aria-label="−">−</button>'+
+        '<span class="v">'+x.qty+'</span>'+
+        '<button type="button" data-step="1" aria-label="+">+</button>'+
+      '</div>'+
+      '<div class="oprice">'+money(d.price * x.qty)+'</div>'+
+    '</div>';
+  }).join("");
+
+  // Maridaje: se calcula sobre lo que ya hay en la comanda
+  const firstDish = DISHES.find(function(y){ return y.id === state.cart[0].id; });
+  const pair = firstDish ? pairFor(firstDish) : null;
+  const upsellHTML = (pair && !cartQty(pair.id))
+    ? '<div class="upsell">'+
+        '<div class="ul">'+esc(o.upsell)+'</div>'+
+        '<div class="urow">'+
+          '<div class="un">'+esc(pair.name[L])+
+            '<div class="uw">'+esc(pair.desc[L])+'</div>'+
+          '</div>'+
+          '<div class="up">'+money(pair.price)+'</div>'+
+          '<button type="button" class="ua" data-add="'+pair.id+'">+</button>'+
+        '</div>'+
+      '</div>'
+    : "";
+
+  body.innerHTML = lines +
+    '<div class="ototal"><span class="lbl">'+esc(o.total)+'</span><span class="val">'+money(cartTotal())+'</span></div>'+
+    '<div class="tablefield"><label for="tableNo">'+esc(o.table)+'</label>'+
+      '<input type="text" inputmode="numeric" id="tableNo" value="'+esc(state.table)+'"></div>'+
+    upsellHTML;
+
+  foot.innerHTML = '<button type="button" class="btn-primary" id="sendOrder">'+
+    esc(state.orderMode === "waiter" ? m.sendWaiter : o.send)+'</button>';
+
+  // Cantidades
+  $$('#soBody .qty').forEach(function(g){
+    g.addEventListener("click", function(e){
+      const b = e.target.closest("[data-step]");
+      if (!b) return;
+      const id = g.dataset.id;
+      cartSet(id, cartQty(id) + Number(b.dataset.step));
+    });
+  });
+  // Añadir el maridaje
+  const ua = $("#soBody .ua");
+  if (ua) ua.addEventListener("click", function(){ cartAdd(ua.dataset.add); renderOrderSheet(); });
+  // Mesa
+  $("#tableNo").addEventListener("input", function(e){
+    state.table = e.target.value.replace(/[^0-9]/g, "").slice(0, 3) || "—";
+  });
+  // Enviar
+  $("#sendOrder").addEventListener("click", function(){
+    const now = new Date();
+    state.sentAt = String(now.getHours()).padStart(2,"0") + ":" + String(now.getMinutes()).padStart(2,"0");
+    renderOrderSheet();
+  });
+}
+
+/* ============================================================
+   6. HOJAS INFERIORES
+   ============================================================ */
+
+let openSheet = null;
+
+function sheetOpen(sel){
+  const el = $(sel);
+  // Si ya hay otra hoja abierta, se cierra: nunca dos a la vez
+  if (openSheet && openSheet !== el){
+    const prev = openSheet;
+    prev.classList.remove("open");
+    window.setTimeout(function(){ if (!prev.classList.contains("open")) prev.hidden = true; }, 300);
+  }
+  el.hidden = false;
+  void el.offsetHeight;   // fuerza reflow para que arranque la transición
+  el.classList.add("open");
+  $("#scrim").classList.add("open");
+  document.body.classList.add("is-locked");
+  openSheet = el;
+}
+
+function sheetClose(){
+  if (!openSheet) return;
+  const el = openSheet;
+  el.classList.remove("open");
+  $("#scrim").classList.remove("open");
+  document.body.classList.remove("is-locked");
+  openSheet = null;
+  window.setTimeout(function(){
+    if (!el.classList.contains("open")) el.hidden = true;
+  }, 300);
+}
+
+/* ============================================================
+   7. EVENTOS
+   ============================================================ */
+
+$("#openFilter").addEventListener("click", function(){
+  renderFilterSheet();
+  sheetOpen("#sheetFilter");
+});
+
+$("#openMatrix").addEventListener("click", function(){
+  renderMatrix();
+  sheetOpen("#sheetMatrix");
+});
+
+$("#scrim").addEventListener("click", sheetClose);
+
+$$("[data-close]").forEach(function(b){
+  b.addEventListener("click", sheetClose);
+});
+
+$("#resetFilter").addEventListener("click", function(){
+  state.excluded.clear();
+  state.diets.clear();
+  renderFilterSheet();
+  renderAll();
+});
+
+document.addEventListener("keydown", function(e){
+  if (e.key === "Escape") sheetClose();
+});
+
+// Delegación: cualquier plato de la carta o de las sugerencias del camarero
+["#menu", "#wOut"].forEach(function(sel){
+  $(sel).addEventListener("click", function(e){
+    const btn = e.target.closest("[data-dish]");
+    if (!btn) return;
+    renderDish(btn.dataset.dish);
+    sheetOpen("#sheetDish");
+  });
+});
+
+// Camarero digital: botón flotante
+$("#waiterFab").addEventListener("click", function(){
+  renderWaiterChrome();
+  sheetOpen("#sheetWaiter");
+  window.setTimeout(function(){ $("#wInput").focus(); }, 340);
+});
+
+// Smart Waiter
+$("#wForm").addEventListener("submit", function(e){
+  e.preventDefault();
+  runWaiter($("#wInput").value);
+  $("#wInput").blur();
+});
+$("#wSuggest").addEventListener("click", function(e){
+  const b = e.target.closest("[data-q]");
+  if (!b) return;
+  $("#wInput").value = b.dataset.q;
+  runWaiter(b.dataset.q);
+});
+
+// Pedido
+$("#openOrder").addEventListener("click", function(){
+  renderOrderSheet();
+  sheetOpen("#sheetOrder");
+});
+
+// Cambio de idioma
+$("#langbar").addEventListener("click", function(e){
+  const btn = e.target.closest("[data-lang]");
+  if (!btn) return;
+  state.lang = btn.dataset.lang;
+  renderAll();
+  if (openSheet === $("#sheetFilter")) renderFilterSheet();
+  if (openSheet === $("#sheetMatrix")) renderMatrix();
+});
+
+// Scroll suave en los chips de sección
+$("#navchips").addEventListener("click", function(e){
+  const a = e.target.closest("a");
+  if (!a) return;
+  e.preventDefault();
+  const target = document.querySelector(a.getAttribute("href"));
+  if (target) target.scrollIntoView({behavior:"smooth", block:"start"});
+});
+
+/* ============================================================
+   7b. PRESENTACIÓN
+   ============================================================ */
+
+const INTRO = {
+  de:{
+    eyebrow:"{name} · {city}",
+    claim1:"Entdecken Sie den", claim2:"Geschmack von {city}",
+    scroll:"Scrollen", enter:"Zur Karte",
+    s2head:"Ein Gasthaus\nseit {since}",
+    s2body:"Am {region} kochen wir seit vier Generationen das, was die Region hergibt: Fisch aus dem See vor der Tür, Fleisch aus Schweizer Haltung, Gemüse von Höfen aus der Umgebung. Keine Experimente — sauberes Handwerk.",
+    s3head:"Unsere Karte",
+    s3body:"Jedes Gericht mit Bild, Preis und vollständiger Allergendeklaration. In vier Sprachen, immer auf dem aktuellen Stand.",
+    s3cta:"Alle Gerichte ansehen",
+    s4head:"Lassen Sie sich\nüberraschen",
+    s4body:"Sie wissen noch nicht, worauf Sie Lust haben? Fragen Sie unseren Smart Waiter wie einer Person — «etwas Leichtes ohne Fleisch» oder «ich habe nicht viel Hunger» — und er sagt Ihnen, was passt und warum.",
+    s4cta:"Karte öffnen"
+  },
+  fr:{
+    eyebrow:"{name} · {city}",
+    claim1:"Découvrez le", claim2:"goût de {city}",
+    scroll:"Défiler", enter:"Voir la carte",
+    s2head:"Une maison\ndepuis {since}",
+    s2body:"Au bord du {region}, nous cuisinons depuis quatre générations ce que la région nous donne : le poisson du lac voisin, la viande d'élevage suisse, les légumes des fermes des environs. Sans esbroufe — du travail bien fait.",
+    s3head:"Notre carte",
+    s3body:"Chaque plat avec sa photo, son prix et la déclaration complète des allergènes. En quatre langues, toujours à jour.",
+    s3cta:"Voir tous les plats",
+    s4head:"Laissez-vous\nsurprendre",
+    s4body:"Vous ne savez pas quoi choisir ? Demandez à notre Smart Waiter comme à une personne — « quelque chose de léger sans viande », « je n'ai pas très faim » — et il vous dira quoi prendre et pourquoi.",
+    s4cta:"Ouvrir la carte"
+  },
+  it:{
+    eyebrow:"{name} · {city}",
+    claim1:"Scopra il", claim2:"gusto di {city}",
+    scroll:"Scorra", enter:"Vedi la carta",
+    s2head:"Una locanda\ndal {since}",
+    s2body:"Sulle rive del {region} cuciniamo da quattro generazioni quello che dà la regione: il pesce del lago qui davanti, la carne di allevamento svizzero, la verdura delle fattorie dei dintorni. Nessun esperimento — solo mestiere fatto bene.",
+    s3head:"La nostra carta",
+    s3body:"Ogni piatto con foto, prezzo e dichiarazione completa degli allergeni. In quattro lingue, sempre aggiornata.",
+    s3cta:"Vedi tutti i piatti",
+    s4head:"Si lasci\nsorprendere",
+    s4body:"Non sa cosa scegliere? Chieda al nostro Smart Waiter come a una persona — «qualcosa di leggero senza carne», «non ho molta fame» — e le dirà cosa prendere e perché.",
+    s4cta:"Apri la carta"
+  },
+  en:{
+    eyebrow:"{name} · {city}",
+    claim1:"Discover the", claim2:"taste of {city}",
+    scroll:"Scroll", enter:"See the menu",
+    s2head:"A house\nsince {since}",
+    s2body:"On the shore of {region} we have cooked what the region gives us for four generations: fish from the lake outside, Swiss-reared meat, vegetables from farms nearby. No gimmicks — just work done properly.",
+    s3head:"Our menu",
+    s3body:"Every dish with its photo, its price and the full allergen declaration. In four languages, always current.",
+    s3cta:"See every dish",
+    s4head:"Let yourself\nbe surprised",
+    s4body:"Not sure what you feel like? Ask our Smart Waiter the way you'd ask a person — \"something light without meat\", \"I'm not very hungry\" — and it will tell you what to have and why.",
+    s4cta:"Open the menu"
+  }
+};
+
+/* Parte el texto en caracteres para la entrada escalonada */
+function splitChars(el, text, delay0){
+  el.innerHTML = "";
+  const words = String(text).split(" ");
+  let i = 0;
+  words.forEach(function(w, wi){
+    const wrap = document.createElement("span");
+    wrap.style.display = "inline-block";
+    wrap.style.whiteSpace = "nowrap";
+    w.split("").forEach(function(ch){
+      const s = document.createElement("span");
+      s.className = "ch";
+      s.textContent = ch;
+      s.style.animationDelay = ((delay0 || 0) + i * 0.028) + "s";
+      wrap.appendChild(s);
+      i++;
+    });
+    el.appendChild(wrap);
+    if (wi < words.length - 1) el.appendChild(document.createTextNode(" "));
+  });
+  return i;
+}
+
+/* Rellena {name} {city} {since} {region} desde RESTAURANT */
+function fill(s){
+  return String(s)
+    .replace(/\{name\}/g, RESTAURANT.name)
+    .replace(/\{city\}/g, restCity())
+    .replace(/\{since\}/g, RESTAURANT.since)
+    .replace(/\{region\}/g, restRegion());
+}
+
+function renderIntro(){
+  const x = INTRO[state.lang];
+
+  $("#inEyebrow").textContent = fill(x.eyebrow);
+  $("#wordmark").textContent = RESTAURANT.name;
+  // Monograma de fondo: la inicial de la palabra que da nombre a la casa
+  const words = RESTAURANT.name.split(" ").filter(function(w){ return w.length > 2; });
+  $("#heroMono").textContent = (words[words.length - 1] || "M").charAt(0).toUpperCase();
+  const n = splitChars($("#inClaim1"), fill(x.claim1), 0.25);
+  splitChars($("#inClaim2"), fill(x.claim2), 0.25 + n * 0.028);
+  document.querySelector(".claim").classList.add("go");
+
+  $("#inScroll").textContent = x.scroll;
+  $("#enterTop").textContent = x.enter;
+  $("#inCta").textContent = x.enter;
+  $("#inS2Head").textContent = fill(x.s2head);
+  $("#inS2Body").textContent = fill(x.s2body);
+  $("#inS3Head").textContent = fill(x.s3head);
+  $("#inS3Body").textContent = fill(x.s3body);
+  $("#inS3Cta").textContent = x.s3cta;
+  $("#inS4Head").textContent = fill(x.s4head);
+  $("#inS4Body").textContent = fill(x.s4body);
+  $("#inS4Cta").textContent = x.s4cta;
+
+  $("#heroVid").src = VIDEO._hero;
+  // Un vídeo de plato para la última sección: el primero que haya
+  const anyDish = STRIP.map(function(id){ return VIDEO[id]; }).find(Boolean) ||
+                  Object.keys(VIDEO).filter(function(k){ return k !== "_hero"; }).map(function(k){ return VIDEO[k]; })[0];
+  if (anyDish) $("#inS4Vid").src = anyDish; else $("#inS4Vid").removeAttribute("src");
+  // Video si el plato lo tiene; foto si no. Idempotente para que
+  // el cambio de idioma no duplique elementos.
+  const setMedia = function(id, dishId, w){
+    let el = document.getElementById(id);
+    const vid = VIDEO[dishId];
+    if (vid){
+      if (el.tagName !== "VIDEO"){
+        const v = document.createElement("video");
+        v.id = id; v.className = el.className;
+        v.muted = true; v.loop = true; v.autoplay = true;
+        v.setAttribute("playsinline", "");
+        el.replaceWith(v); el = v;
+      }
+      if (el.getAttribute("src") !== vid) el.src = vid;
+      el.muted = true;
+      const pr = el.play(); if (pr && pr.catch) pr.catch(function(){});
+    } else if (el.tagName === "IMG"){
+      const url = photoURL(dishId, w);
+      if (url) el.src = url; else el.removeAttribute("src");
+    }
+  };
+  setMedia("inS2Img", STRIP[0], 1200);
+  setMedia("inPair1", STRIP[1], 800);
+  setMedia("inPair2", STRIP[2], 800);
+
+  $("#inStrip").innerHTML = STRIP.map(function(id){
+    const d = DISHES.find(function(y){ return y.id === id; });
+    if (!d) return "";
+    const media = VIDEO[id]
+      ? '<video src="'+esc(VIDEO[id])+'" muted autoplay loop playsinline preload="metadata"></video>'
+      : '<img src="'+esc(d.img)+'" alt="'+esc(d.name[state.lang])+'" loading="lazy" decoding="async">';
+    return '<figure>'+media+
+      '<figcaption>'+esc(d.name[state.lang])+'<br><span class="p">'+money(d.price)+'</span></figcaption></figure>';
+  }).join("");
+
+  $$("#introLang button").forEach(function(b){
+    b.setAttribute("aria-pressed", b.dataset.lang === state.lang ? "true" : "false");
+  });
+
+  observeReveals();
+}
+
+/* Revelado al hacer scroll.
+   Comprobación por posición en vez de IntersectionObserver: si el
+   usuario arrastra la barra o salta con un ancla, el observador no
+   dispara los elementos que se ha saltado y se quedan invisibles.
+   Esto revela todo lo que ya ha pasado por pantalla, siempre. */
+let revealTick = false;
+function checkReveals(){
+  revealTick = false;
+  const bar = $("#intro") ? document.querySelector(".introbar") : null;
+  if (bar) bar.classList.toggle("solid", window.scrollY > 60);
+
+  /* Deriva horizontal del claim: la primera línea se va hacia la
+     izquierda y la segunda hacia la derecha al bajar. Es lo que hace
+     que el texto sangre fuera de los bordes, como en Sibuya. */
+  const l1 = document.querySelector(".claim .l1");
+  const l2 = document.querySelector(".claim .l2");
+  if (l1 && l2){
+    const p = Math.min(1, window.scrollY / Math.max(1, window.innerHeight));
+    const d = Math.round(p * 260);
+    l1.style.transform = "translateX(" + (-d) + "px)";
+    l2.style.transform = "translateX(" + d + "px)";
+  }
+  const limit = window.innerHeight * 0.9;
+  $$("#intro .reveal:not(.in)").forEach(function(e){
+    if (e.getBoundingClientRect().top < limit) e.classList.add("in");
+  });
+}
+function observeReveals(){
+  $$("#intro .reveal").forEach(function(e, i){
+    e.style.transitionDelay = (i % 3) * 0.09 + "s";
+  });
+  checkReveals();
+}
+window.addEventListener("scroll", function(){
+  if (revealTick) return;
+  revealTick = true;
+  window.requestAnimationFrame(checkReveals);
+}, {passive:true});
+window.addEventListener("resize", checkReveals, {passive:true});
+
+function enterMenu(){
+  document.body.classList.remove("showing-intro");
+  window.scrollTo(0, 0);
+  renderAll();
+}
+
+$$("[data-enter]").forEach(function(b){ b.addEventListener("click", enterMenu); });
+
+/* Algunos móviles no arrancan el vídeo hasta que el usuario toca la
+   pantalla, aunque esté silenciado. Se reintenta al primer gesto. */
+/* Ningun video parado si esta a la vista: algunos moviles no
+   arrancan el autoplay (ahorro de bateria, video creado por JS). */
+window.setInterval(function(){
+  document.querySelectorAll("video").forEach(function(v){
+    var r = v.getBoundingClientRect();
+    var cerca = r.bottom > -200 && r.top < window.innerHeight + 200;
+    /* Enganchar el vídeo la primera vez que la tarjeta se asoma. */
+    if (cerca && v.dataset.lazy && !v.getAttribute("src")){
+      v.setAttribute("src", v.dataset.lazy);
+      delete v.dataset.lazy;
+    }
+    if (!v.paused) return;
+    if (!v.getAttribute("src")) return;
+    if (cerca){
+      v.muted = true;
+      var p = v.play(); if (p && p.catch) p.catch(function(){});
+    }
+  });
+}, 500);
+
+(function heroPlayFallback(){
+  const v = $("#heroVid");
+  if (!v) return;
+  const kick = function(){
+    if (v.paused) { const p = v.play(); if (p && p.catch) p.catch(function(){}); }
+  };
+  ["touchstart","click","scroll"].forEach(function(ev){
+    window.addEventListener(ev, kick, {once:true, passive:true});
+  });
+})();
+
+$("#introLang").addEventListener("click", function(e){
+  const b = e.target.closest("[data-lang]");
+  if (!b) return;
+  state.lang = b.dataset.lang;
+  renderIntro();
+  renderAll();
+});
+
+/* ============================================================
+   8. ARRANQUE
+   ============================================================ */
+
+renderIntro();
+renderAll();
+</script>
+</body>
+</html>
