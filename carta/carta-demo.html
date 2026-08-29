@@ -1061,23 +1061,26 @@ body:not(.showing-intro) #intro{display:none}
 @media (prefers-reduced-motion: reduce){.chef-brazo{animation:none}}
 
 /* ============================================================
-   VARIANTE «CRISTAL» — se activa con ?estilo=glass en la URL.
-   No es la carta por defecto: la de siempre sigue igual, porque
-   es la que va enlazada en los correos ya enviados.
+   CRISTAL (glassmorphism) — ahora es el aspecto POR DEFECTO.
+   Marcha atras: ?estilo=plano devuelve la carta solida de antes.
 
-   El cristal solo parece cristal si hay algo con textura detras.
-   Sobre un fondo plano queda como un gris mas claro, asi que el
-   fondo lleva tres manchas de color muy suaves de la propia paleta.
+   El cristal necesita algo con color detras para refractar: sobre
+   un fondo plano queda como un gris mas claro. De ahi las manchas
+   de color del fondo, sacadas de la propia paleta.
    ============================================================ */
 .glass{
   --vidrio:rgba(255,255,255,.075);
   --vidrio-fuerte:rgba(255,255,255,.13);
+  --vidrio-solido:rgba(255,255,255,.16);   /* donde hay que leer si o si */
   --vidrio-borde:rgba(255,255,255,.17);
   --vidrio-luz:rgba(255,255,255,.22);
   --desenfoque:blur(16px) saturate(150%);
+  --desenfoque-medio:blur(12px) saturate(140%);
+  --desenfoque-corto:blur(9px) saturate(135%);
 }
 
-.glass body{
+.glass body,
+.glass #intro{
   background:
     radial-gradient(50vw 50vw at 10% 4%,   rgba(204,187,155,.32), transparent 60%),
     radial-gradient(46vw 46vw at 92% 18%,  rgba(212,115,92,.26),  transparent 62%),
@@ -1086,35 +1089,68 @@ body:not(.showing-intro) #intro{display:none}
   background-attachment:fixed;
 }
 
-/* Superficies grandes */
+/* --- Superficies grandes --- */
 .glass .dish,
 .glass .card,
 .glass .sheet,
 .glass .wsuggest,
 .glass .wout,
-.glass .ticket{
+.glass .ticket,
+.glass .cartbar,
+.glass .tablet,
+.glass .ifull{
   background:var(--vidrio);
   -webkit-backdrop-filter:var(--desenfoque);
   backdrop-filter:var(--desenfoque);
   border:1px solid var(--vidrio-borde);
-  box-shadow:inset 0 1px 0 var(--vidrio-luz), 0 12px 30px rgba(0,0,0,.26);
+  box-shadow:inset 0 1px 0 var(--vidrio-luz), 0 14px 34px rgba(0,0,0,.28);
 }
 .glass .dish:hover{background:var(--vidrio-fuerte)}
 
-/* Piezas pequenas: un punto mas opacas o se pierden */
+/* --- Controles: un punto mas opacos o desaparecen --- */
+.glass .filterbtn,
+.glass .iconbtn,
+.glass .navchips a,
+.glass .langbar button,
+.glass .wform,
+.glass .wform input,
+.glass .tablefield input,
+.glass .sheet .foot,
+.glass .cartbar .go{
+  background:var(--vidrio-fuerte);
+  -webkit-backdrop-filter:var(--desenfoque-medio);
+  backdrop-filter:var(--desenfoque-medio);
+  border:1px solid var(--vidrio-borde);
+}
+
+/* --- Piezas pequenas --- */
 .glass .chip,
 .glass .acode,
 .glass .qty,
 .glass .sheet .close,
 .glass .addbtn[disabled],
+.glass .soldtag,
 .glass .wq{
   background:var(--vidrio-fuerte);
-  -webkit-backdrop-filter:blur(10px) saturate(140%);
-  backdrop-filter:blur(10px) saturate(140%);
+  -webkit-backdrop-filter:var(--desenfoque-corto);
+  backdrop-filter:var(--desenfoque-corto);
   border:1px solid var(--vidrio-borde);
 }
+.glass .qty button:hover,
+.glass .arow:hover{background:var(--vidrio-solido)}
 
-/* Cabecera: ya era translucida, se le sube el cristal */
+/* --- Tabla de alergenos: aqui se lee informacion que importa,
+       asi que lleva mas cuerpo y menos transparencia. --- */
+.glass table.matrix thead th,
+.glass table.matrix th.dishcol{
+  background:var(--vidrio-solido);
+  -webkit-backdrop-filter:var(--desenfoque-medio);
+  backdrop-filter:var(--desenfoque-medio);
+}
+.glass table.matrix tr.catrow th.dishcol,
+.glass table.matrix tr.catrow td{background:var(--vidrio-fuerte)}
+
+/* --- Cabecera --- */
 .glass .sticky{
   background:rgba(41,41,41,.55) !important;
   -webkit-backdrop-filter:blur(20px) saturate(170%) !important;
@@ -1122,57 +1158,76 @@ body:not(.showing-intro) #intro{display:none}
   border-bottom:1px solid var(--vidrio-borde);
 }
 
-/* La hoja inferior se apoya en el borde superior, no en la sombra */
+/* --- Hoja inferior: se apoya en el borde de arriba --- */
 .glass .sheet{
   border-bottom:0;
   box-shadow:inset 0 1px 0 var(--vidrio-luz), 0 -18px 50px rgba(0,0,0,.42);
 }
-.glass .sheet .foot{
-  background:rgba(41,41,41,.5);
-  -webkit-backdrop-filter:blur(16px) saturate(150%);
-  backdrop-filter:blur(16px) saturate(150%);
-  border-top:1px solid var(--vidrio-borde);
-}
 
-/* El boton de accion se queda solido: si el reclamo tambien es
-   translucido, deja de ser el elemento mas visible de la pantalla. */
+/* --- El boton de accion se queda solido: si el reclamo tambien es
+       translucido, deja de ser lo mas visible de la pantalla. --- */
 .glass .addbtn:not([disabled]),
-.glass .sheet .foot button.primary{
+.glass .sheet .foot button.primary,
+.glass .cta,
+.glass .pill{
   -webkit-backdrop-filter:none;
   backdrop-filter:none;
 }
 
-/* Salidas de seguridad ------------------------------------------------
-   1) Navegador sin backdrop-filter: fondos solidos de siempre.
-   2) Sistema con transparencias reducidas (accesibilidad): idem.
-   El desenfoque es caro en moviles viejos y esta carta se abre
-   justamente en el movil del comensal. */
+/* --- Fotos y videos siguen opacos: son la imagen del plato,
+       no una superficie de cristal. --- */
+.glass .dish .thumb,
+.glass .shot,
+.glass .ipair img, .glass .ipair video,
+.glass .istrip img, .glass .istrip video{
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
+}
+
+/* --- Salidas de seguridad -----------------------------------------
+   1) Navegador sin backdrop-filter -> fondos solidos de siempre.
+   2) Sistema con transparencias reducidas (accesibilidad) -> idem.
+   El desenfoque es caro y esta carta se abre en el movil del comensal,
+   con quince tarjetas a la vez en pantalla mientras hace scroll. */
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-  .glass .dish, .glass .card, .glass .sheet, .glass .wsuggest,
-  .glass .wout, .glass .ticket{background:var(--surface)}
-  .glass .chip, .glass .acode, .glass .qty,
-  .glass .sheet .close, .glass .wq{background:var(--surface-2)}
+  .glass .dish,.glass .card,.glass .sheet,.glass .wsuggest,.glass .wout,
+  .glass .ticket,.glass .cartbar,.glass .tablet,.glass .ifull,
+  .glass table.matrix thead th,.glass table.matrix th.dishcol{background:var(--surface)}
+  .glass .filterbtn,.glass .iconbtn,.glass .navchips a,.glass .langbar button,
+  .glass .wform,.glass .wform input,.glass .tablefield input,.glass .sheet .foot,
+  .glass .cartbar .go,.glass .chip,.glass .acode,.glass .qty,.glass .sheet .close,
+  .glass .soldtag,.glass .wq{background:var(--surface-2)}
   .glass .sticky{background:var(--paper) !important}
+  .glass body,.glass #intro{background:var(--paper)}
 }
 @media (prefers-reduced-transparency: reduce){
-  .glass .dish, .glass .card, .glass .sheet, .glass .wsuggest,
-  .glass .wout, .glass .ticket{
-    background:var(--surface);
-    -webkit-backdrop-filter:none;backdrop-filter:none;
+  .glass .dish,.glass .card,.glass .sheet,.glass .wsuggest,.glass .wout,
+  .glass .ticket,.glass .cartbar,.glass .tablet,.glass .ifull,
+  .glass table.matrix thead th,.glass table.matrix th.dishcol{
+    background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none;
+  }
+  .glass .filterbtn,.glass .iconbtn,.glass .navchips a,.glass .langbar button,
+  .glass .wform,.glass .wform input,.glass .tablefield input,.glass .sheet .foot,
+  .glass .cartbar .go,.glass .chip,.glass .acode,.glass .qty,.glass .sheet .close,
+  .glass .soldtag,.glass .wq{
+    background:var(--surface-2);-webkit-backdrop-filter:none;backdrop-filter:none;
   }
   .glass .sticky{background:var(--paper) !important;-webkit-backdrop-filter:none;backdrop-filter:none}
-  .glass body{background:var(--paper)}
+  .glass body,.glass #intro{background:var(--paper)}
 }
 </style>
 <script>
 /* ?estilo=glass -> variante de cristal. Se pone en <html> antes de pintar
    para que no se vea el cambio de estilo a mitad de carga. */
 (function(){
+  /* El cristal va por defecto. ?estilo=plano devuelve la version solida,
+     por si hay que volver atras sin tocar el fichero. Se pone la clase en
+     <html> antes de pintar para que no se vea el cambio a mitad de carga. */
   try{
-    if(new URLSearchParams(location.search).get("estilo")==="glass"){
+    if(new URLSearchParams(location.search).get("estilo")!=="plano"){
       document.documentElement.classList.add("glass");
     }
-  }catch(e){}
+  }catch(e){ document.documentElement.classList.add("glass"); }
 })();
 </script>
 </head>
